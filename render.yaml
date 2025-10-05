@@ -3,7 +3,7 @@ services:
     name: whatsapp-business-platform
     env: node
     buildCommand: npm install
-    startCommand: npm start
+    startCommand: node server.js
     plan: free
     envVars:
       - key: NODE_ENV
