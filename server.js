@@ -78,7 +78,7 @@ async function handleIncomingMessage(message, contact) {
   } else if (userState === 'waiting_for_name_response') {
     // User provided their name, respond with greeting
     const name = messageText.trim();
-    await sendMessage(phoneNumber, `Hello, ${name}! Nice to meet you. How can I help you today?`);
+    await sendMessage(phoneNumber, `Hello, ${name}! It's great to meet you! How can I help you today?`);
     userStates.set(phoneNumber, 'conversation');
   } else if (userState === 'conversation') {
     // Handle ongoing conversation
