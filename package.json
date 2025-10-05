@@ -9,14 +9,20 @@
     "build": "echo 'No build step required'",
     "render-postbuild": "echo 'Post-build completed'"
   },
-  "keywords": ["whatsapp", "business", "messaging", "webhook"],
+  "keywords": [
+    "whatsapp",
+    "business",
+    "messaging",
+    "webhook"
+  ],
   "author": "",
   "license": "MIT",
   "dependencies": {
-    "express": "^4.18.2",
     "axios": "^1.6.0",
+    "body-parser": "^1.20.2",
     "dotenv": "^16.3.1",
-    "body-parser": "^1.20.2"
+    "express": "^4.18.2",
+    "openai": "^6.1.0"
   },
   "devDependencies": {
     "nodemon": "^3.0.1"

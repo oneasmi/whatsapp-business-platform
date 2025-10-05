@@ -1,6 +1,7 @@
 const express = require('express');
 const axios = require('axios');
 const bodyParser = require('body-parser');
+const OpenAIService = require('./openai-service');
 require('dotenv').config();
 
 const app = express();
@@ -12,6 +13,10 @@ app.use(bodyParser.urlencoded({ extended: true }));
 
 // Store user states (in production, use a database)
 const userStates = new Map();
+const conversationHistory = new Map(); // Store conversation history for context
+
+// Initialize OpenAI service
+const openaiService = new OpenAIService();
 
 // WhatsApp API configuration
 const WHATSAPP_API_URL = `https://graph.facebook.com/v18.0/${process.env.WHATSAPP_PHONE_NUMBER_ID}/messages`;
@@ -71,18 +76,38 @@ async function handleIncomingMessage(message, contact) {
   // Get user state
   let userState = userStates.get(phoneNumber) || 'waiting_for_name';
   
-  if (userState === 'waiting_for_name') {
-    // Ask for name
-    await sendMessage(phoneNumber, `Hello! What's your name?`);
-    userStates.set(phoneNumber, 'waiting_for_name_response');
-  } else if (userState === 'waiting_for_name_response') {
-    // User provided their name, respond with greeting
-    const name = messageText.trim();
-    await sendMessage(phoneNumber, `Hello, ${name}! It's great to meet you! How can I help you today?`);
-    userStates.set(phoneNumber, 'conversation');
-  } else if (userState === 'conversation') {
-    // Handle ongoing conversation
-    await sendMessage(phoneNumber, `Thanks for your message: "${messageText}". Is there anything else I can help you with?`);
+  // Store conversation history for context
+  if (!conversationHistory.has(phoneNumber)) {
+    conversationHistory.set(phoneNumber, []);
+  }
+  conversationHistory.get(phoneNumber).push(messageText);
+  
+  try {
+    if (userState === 'waiting_for_name') {
+      // Ask for name using OpenAI
+      const response = await openaiService.generateNameCollectionResponse();
+      await sendMessage(phoneNumber, response);
+      userStates.set(phoneNumber, 'waiting_for_name_response');
+    } else if (userState === 'waiting_for_name_response') {
+      // User provided their name, respond with personalized greeting
+      const name = messageText.trim();
+      const response = await openaiService.generateGreetingResponse(name, messageText);
+      await sendMessage(phoneNumber, response);
+      userStates.set(phoneNumber, 'conversation');
+    } else if (userState === 'conversation') {
+      // Handle ongoing conversation - check for keywords or greetings
+      const history = conversationHistory.get(phoneNumber).slice(-5); // Last 5 messages for context
+      const response = await openaiService.generateConversationResponse(userName, messageText, history);
+      
+      // Only send response if one is generated (not null)
+      if (response) {
+        await sendMessage(phoneNumber, response);
+      }
+      // If response is null, no message is sent (as requested)
+    }
+  } catch (error) {
+    console.error('Error generating AI response:', error);
+    // No fallback response - only respond when keywords are detected
   }
 }
 

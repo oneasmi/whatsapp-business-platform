@@ -1,12 +1,14 @@
-# WhatsApp Business Platform
+# WhatsApp Business Platform with AI Integration
 
-A Node.js application that handles WhatsApp Business API webhooks for automated messaging.
+A Node.js application that handles WhatsApp Business API webhooks with OpenAI-powered intelligent responses.
 
 ## Features
 
 - Webhook verification for WhatsApp Business API
-- Automated message handling
-- Simple conversation flow (asks for name, responds with greeting)
+- AI-powered message handling using OpenAI GPT-3.5-turbo
+- Intelligent conversation flow with context awareness
+- Specific business use case responses (not generic AI responses)
+- Conversation history tracking for better context
 - Easy deployment to Render
 
 ## Setup Instructions
@@ -23,6 +25,7 @@ Required environment variables:
 - `WHATSAPP_ACCESS_TOKEN`: Your WhatsApp Business API access token
 - `WHATSAPP_PHONE_NUMBER_ID`: Your WhatsApp Business phone number ID
 - `WHATSAPP_VERIFY_TOKEN`: A custom verification token for webhook security
+- `OPENAI_API_KEY`: Your OpenAI API key for AI-powered responses
 
 ### 2. Local Development
 
@@ -58,13 +61,27 @@ npm start
 - `POST /webhook` - Receive WhatsApp messages
 - `GET /health` - Health check endpoint
 
-## Message Flow
+## AI-Powered Message Flow
 
 1. User sends any message to your WhatsApp Business number
-2. Bot responds: "Hello! What's your name?"
+2. AI generates a personalized welcome message asking for their name
 3. User replies with their name
-4. Bot responds: "Hello, [name]! Nice to meet you. How can I help you today?"
-5. Bot continues conversation with user
+4. AI generates a personalized greeting and offers specific help based on their message
+5. AI continues conversation with context awareness, providing business-specific responses for:
+   - Product inquiries
+   - Service requests
+   - Technical support
+   - Billing questions
+   - Complaints
+   - General information requests
+
+## AI Features
+
+- **Context-Aware Responses**: Maintains conversation history for better understanding
+- **Business-Specific Prompts**: Tailored for business use cases, not generic AI responses
+- **Professional Tone**: Maintains professional WhatsApp Business communication standards
+- **Error Handling**: Graceful fallback responses if OpenAI API is unavailable
+- **Character Limit Compliance**: Responses optimized for WhatsApp's message length
 
 ## Security Notes
 
