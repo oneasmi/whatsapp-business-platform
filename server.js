@@ -1,7 +1,7 @@
 const express = require('express');
 const axios = require('axios');
 const bodyParser = require('body-parser');
-const GeminiAIService = require('./openai-service');
+const GeminiAIService = require('./gemini-service');
 require('dotenv').config();
 
 const app = express();

@@ -1,5 +1,5 @@
 // Test script for Gemini AI integration with new behavior
-const GeminiAIService = require('./openai-service');
+const GeminiAIService = require('./gemini-service');
 require('dotenv').config();
 
 async function testGeminiAIService() {

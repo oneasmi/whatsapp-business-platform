@@ -179,4 +179,4 @@ Generate a welcoming message that asks for their name:`;
   }
 }
 
-module.exports = OpenAIService;
+module.exports = GeminiAIService;
