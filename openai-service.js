@@ -2,13 +2,26 @@ const OpenAI = require('openai');
 
 class OpenAIService {
   constructor() {
-    this.client = new OpenAI({
-      apiKey: process.env.OPENAI_API_KEY,
-    });
+    this.apiKey = process.env.OPENAI_API_KEY;
+    this.isAvailable = !!this.apiKey;
+    
+    if (this.isAvailable) {
+      this.client = new OpenAI({
+        apiKey: this.apiKey,
+      });
+    } else {
+      console.warn('⚠️  OpenAI API key not found. Running in fallback mode.');
+      this.client = null;
+    }
   }
 
   // Generate a greeting response (simple greeting back)
   async generateGreetingResponse(userName, userMessage) {
+    // Fallback response if OpenAI is not available
+    if (!this.isAvailable) {
+      return "Hello!";
+    }
+
     const prompt = `The user "${userName}" sent a greeting message: "${userMessage}".
 
 Respond with a simple, friendly greeting back. Keep it short and casual. Examples:
@@ -36,6 +49,11 @@ Keep it under 20 characters and very simple.`;
 
   // Check if message contains keywords and generate "gotcha" response
   async checkForKeywordsAndRespond(userMessage) {
+    // Fallback keyword detection if OpenAI is not available
+    if (!this.isAvailable) {
+      return this.fallbackKeywordDetection(userMessage);
+    }
+
     const prompt = `Analyze this message: "${userMessage}"
 
 Check if it contains any of these keywords or patterns:
@@ -74,8 +92,31 @@ Only respond if keywords/personal details are detected. Be very strict about thi
       return result;
     } catch (error) {
       console.error('Error checking keywords:', error);
-      return null;
+      return this.fallbackKeywordDetection(userMessage);
     }
+  }
+
+  // Fallback keyword detection using simple regex patterns
+  fallbackKeywordDetection(userMessage) {
+    const message = userMessage.toLowerCase();
+    
+    // Check for birthday patterns
+    if (message.includes('birthday') || message.includes('born on')) {
+      return `gotcha, ${userMessage}`;
+    }
+    
+    // Check for phone number patterns
+    if (message.includes('phone number') || message.includes('phone') || /\d{3}[-.]?\d{3}[-.]?\d{4}/.test(message)) {
+      return `gotcha, ${userMessage}`;
+    }
+    
+    // Check for date patterns (basic)
+    if (/\d{1,2}(st|nd|rd|th)?\s+(january|february|march|april|may|june|july|august|september|october|november|december|jan|feb|mar|apr|may|jun|jul|aug|sep|oct|nov|dec)/i.test(message)) {
+      return `gotcha, ${userMessage}`;
+    }
+    
+    // No keywords detected
+    return null;
   }
 
   // Generate a response for ongoing conversation (now simplified)
