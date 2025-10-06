@@ -1,7 +1,7 @@
 const express = require('express');
 const axios = require('axios');
 const bodyParser = require('body-parser');
-const OpenAIService = require('./openai-service');
+const GeminiAIService = require('./openai-service');
 require('dotenv').config();
 
 const app = express();
@@ -15,8 +15,8 @@ app.use(bodyParser.urlencoded({ extended: true }));
 const userStates = new Map();
 const conversationHistory = new Map(); // Store conversation history for context
 
-// Initialize OpenAI service
-const openaiService = new OpenAIService();
+// Initialize Gemini AI service
+const geminiService = new GeminiAIService();
 
 // WhatsApp API configuration
 const WHATSAPP_API_URL = `https://graph.facebook.com/v18.0/${process.env.WHATSAPP_PHONE_NUMBER_ID}/messages`;
@@ -84,20 +84,20 @@ async function handleIncomingMessage(message, contact) {
   
   try {
     if (userState === 'waiting_for_name') {
-      // Ask for name using OpenAI
-      const response = await openaiService.generateNameCollectionResponse();
+      // Ask for name using Gemini AI
+      const response = await geminiService.generateNameCollectionResponse();
       await sendMessage(phoneNumber, response);
       userStates.set(phoneNumber, 'waiting_for_name_response');
     } else if (userState === 'waiting_for_name_response') {
       // User provided their name, respond with personalized greeting
       const name = messageText.trim();
-      const response = await openaiService.generateGreetingResponse(name, messageText);
+      const response = await geminiService.generateGreetingResponse(name, messageText);
       await sendMessage(phoneNumber, response);
       userStates.set(phoneNumber, 'conversation');
     } else if (userState === 'conversation') {
       // Handle ongoing conversation - check for keywords or greetings
       const history = conversationHistory.get(phoneNumber).slice(-5); // Last 5 messages for context
-      const response = await openaiService.generateConversationResponse(userName, messageText, history);
+      const response = await geminiService.generateConversationResponse(userName, messageText, history);
       
       // Only send response if one is generated (not null)
       if (response) {

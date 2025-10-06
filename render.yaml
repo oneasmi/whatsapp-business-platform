@@ -15,6 +15,6 @@ services:
         sync: false  # Set this in Render dashboard
       - key: WHATSAPP_VERIFY_TOKEN
         sync: false  # Set this in Render dashboard
-      # Optional: OpenAI API key (app will work without it using fallback responses)
-      - key: OPENAI_API_KEY
+      # Optional: Gemini AI API key (app will work without it using fallback responses)
+      - key: GEMINI_API_KEY
         sync: false  # Set this in Render dashboard for AI-powered responses

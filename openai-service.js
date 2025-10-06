@@ -1,23 +1,22 @@
-const OpenAI = require('openai');
+const { GoogleGenerativeAI } = require('@google/generative-ai');
 
-class OpenAIService {
+class GeminiAIService {
   constructor() {
-    this.apiKey = process.env.OPENAI_API_KEY;
+    this.apiKey = process.env.GEMINI_API_KEY;
     this.isAvailable = !!this.apiKey;
     
     if (this.isAvailable) {
-      this.client = new OpenAI({
-        apiKey: this.apiKey,
-      });
+      this.genAI = new GoogleGenerativeAI(this.apiKey);
+      this.model = this.genAI.getGenerativeModel({ model: "gemini-pro" });
     } else {
-      console.warn('⚠️  OpenAI API key not found. Running in fallback mode.');
-      this.client = null;
+      console.warn('⚠️  Gemini API key not found. Running in fallback mode.');
+      this.model = null;
     }
   }
 
   // Generate a greeting response (simple greeting back)
   async generateGreetingResponse(userName, userMessage) {
-    // Fallback response if OpenAI is not available
+    // Fallback response if Gemini is not available
     if (!this.isAvailable) {
       return "Hello!";
     }
@@ -33,14 +32,9 @@ Respond with a simple, friendly greeting back. Keep it short and casual. Example
 Keep it under 20 characters and very simple.`;
 
     try {
-      const response = await this.client.chat.completions.create({
-        model: "gpt-3.5-turbo",
-        messages: [{ role: "user", content: prompt }],
-        max_tokens: 20,
-        temperature: 0.7,
-      });
-
-      return response.choices[0].message.content.trim();
+      const result = await this.model.generateContent(prompt);
+      const response = await result.response;
+      return response.text().trim();
     } catch (error) {
       console.error('Error generating greeting response:', error);
       return "Hello!";
@@ -49,7 +43,7 @@ Keep it under 20 characters and very simple.`;
 
   // Check if message contains keywords and generate "gotcha" response
   async checkForKeywordsAndRespond(userMessage) {
-    // Fallback keyword detection if OpenAI is not available
+    // Fallback keyword detection if Gemini is not available
     if (!this.isAvailable) {
       return this.fallbackKeywordDetection(userMessage);
     }
@@ -75,21 +69,16 @@ If NO keywords or personal details are found, respond with: "NO_RESPONSE"
 Only respond if keywords/personal details are detected. Be very strict about this.`;
 
     try {
-      const response = await this.client.chat.completions.create({
-        model: "gpt-3.5-turbo",
-        messages: [{ role: "user", content: prompt }],
-        max_tokens: 50,
-        temperature: 0.3,
-      });
-
-      const result = response.choices[0].message.content.trim();
+      const result = await this.model.generateContent(prompt);
+      const response = await result.response;
+      const resultText = response.text().trim();
       
       // Return null if no response should be given
-      if (result === "NO_RESPONSE") {
+      if (resultText === "NO_RESPONSE") {
         return null;
       }
       
-      return result;
+      return resultText;
     } catch (error) {
       console.error('Error checking keywords:', error);
       return this.fallbackKeywordDetection(userMessage);

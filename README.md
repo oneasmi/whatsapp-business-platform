@@ -1,11 +1,11 @@
 # WhatsApp Business Platform with AI Integration
 
-A Node.js application that handles WhatsApp Business API webhooks with OpenAI-powered intelligent responses.
+A Node.js application that handles WhatsApp Business API webhooks with Google Gemini AI-powered intelligent responses.
 
 ## Features
 
 - Webhook verification for WhatsApp Business API
-- AI-powered message handling using OpenAI GPT-3.5-turbo
+- AI-powered message handling using Google Gemini AI (FREE!)
 - Intelligent conversation flow with context awareness
 - Specific business use case responses (not generic AI responses)
 - Conversation history tracking for better context
@@ -25,7 +25,7 @@ Required environment variables:
 - `WHATSAPP_ACCESS_TOKEN`: Your WhatsApp Business API access token
 - `WHATSAPP_PHONE_NUMBER_ID`: Your WhatsApp Business phone number ID
 - `WHATSAPP_VERIFY_TOKEN`: A custom verification token for webhook security
-- `OPENAI_API_KEY`: Your OpenAI API key for AI-powered responses
+- `GEMINI_API_KEY`: Your Google Gemini AI API key (FREE!) for AI-powered responses
 
 ### 2. Local Development
 
@@ -80,8 +80,9 @@ npm start
 - **Context-Aware Responses**: Maintains conversation history for better understanding
 - **Business-Specific Prompts**: Tailored for business use cases, not generic AI responses
 - **Professional Tone**: Maintains professional WhatsApp Business communication standards
-- **Error Handling**: Graceful fallback responses if OpenAI API is unavailable
+- **Error Handling**: Graceful fallback responses if Gemini AI API is unavailable
 - **Character Limit Compliance**: Responses optimized for WhatsApp's message length
+- **FREE AI**: Uses Google Gemini AI with generous free tier
 
 ## Security Notes
 
