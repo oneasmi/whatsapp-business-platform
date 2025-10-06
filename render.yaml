@@ -1,7 +1,6 @@
 services:
   - type: web
     name: whatsapp-business-platform
-    env: node
     runtime: node
     buildCommand: npm install
     startCommand: npm start
