@@ -42,25 +42,36 @@ app.get('/webhook', (req, res) => {
 app.post('/webhook', async (req, res) => {
   try {
     const body = req.body;
+    console.log('📨 Webhook received:', JSON.stringify(body, null, 2));
     
     if (body.object === 'whatsapp_business_account') {
+      console.log('✅ Valid WhatsApp Business webhook');
       body.entry.forEach(entry => {
         entry.changes.forEach(change => {
           if (change.field === 'messages') {
+            console.log('📱 Messages field detected');
             const messages = change.value.messages;
             if (messages) {
+              console.log(`📬 Processing ${messages.length} message(s)`);
               messages.forEach(async (message) => {
+                console.log('💬 Message details:', JSON.stringify(message, null, 2));
                 await handleIncomingMessage(message, change.value.contacts[0]);
               });
+            } else {
+              console.log('⚠️ No messages in webhook');
             }
+          } else {
+            console.log('⚠️ Not a messages field:', change.field);
           }
         });
       });
+    } else {
+      console.log('❌ Invalid webhook object:', body.object);
     }
     
     res.status(200).send('OK');
   } catch (error) {
-    console.error('Error processing webhook:', error);
+    console.error('❌ Error processing webhook:', error);
     res.status(500).send('Internal Server Error');
   }
 });
@@ -71,10 +82,12 @@ async function handleIncomingMessage(message, contact) {
   const messageText = message.text?.body || '';
   const userName = contact.profile?.name || 'User';
   
-  console.log(`Received message from ${phoneNumber}: ${messageText}`);
+  console.log(`📞 Received message from ${phoneNumber}: ${messageText}`);
+  console.log(`👤 User name: ${userName}`);
   
   // Get user state
   let userState = userStates.get(phoneNumber) || 'waiting_for_name';
+  console.log(`🔄 User state: ${userState}`);
   
   // Store conversation history for context
   if (!conversationHistory.has(phoneNumber)) {
@@ -114,6 +127,10 @@ async function handleIncomingMessage(message, contact) {
 // Send message via WhatsApp API
 async function sendMessage(to, text) {
   try {
+    console.log(`📤 Sending message to ${to}: ${text}`);
+    console.log(`🔑 Using access token: ${ACCESS_TOKEN ? 'Present' : 'Missing'}`);
+    console.log(`📱 API URL: ${WHATSAPP_API_URL}`);
+    
     const response = await axios.post(
       WHATSAPP_API_URL,
       {
@@ -132,10 +149,10 @@ async function sendMessage(to, text) {
       }
     );
     
-    console.log('Message sent successfully:', response.data);
+    console.log('✅ Message sent successfully:', response.data);
     return response.data;
   } catch (error) {
-    console.error('Error sending message:', error.response?.data || error.message);
+    console.error('❌ Error sending message:', error.response?.data || error.message);
     throw error;
   }
 }
