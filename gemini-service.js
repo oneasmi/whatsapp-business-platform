@@ -50,23 +50,28 @@ Keep it under 30 characters and include their name.`;
 
     const prompt = `Analyze this message: "${userMessage}"
 
-Check if it contains any of these keywords or patterns:
+Check if it contains ANY personal information:
 - "birthday" (with date)
 - "phone number" 
 - Any date mentioned with details
-- Personal information being shared
+- Personal preferences: "I like...", "I love...", "I am...", "I'm..."
+- Interests, hobbies, job, location, etc.
 
-If the message contains keywords or personal details, respond with:
-"gotcha, [repeat the exact information they provided]"
+If ANY personal details are found, respond with:
+"gotcha, [convert first person to second person]"
 
 Examples:
 - "my birthday is on 26th feb" → "gotcha, your birthday is on 26th feb"
-- "my phone number is 123-456-7890" → "gotcha, your phone number is 123-456-7890"
-- "I was born on January 15th" → "gotcha, you were born on January 15th"
+- "I like pineapple" → "gotcha, you like pineapple"
+- "I'm a teacher" → "gotcha, you're a teacher"
+- "I love pizza" → "gotcha, you love pizza"
+- "I have a dog" → "gotcha, you have a dog"
 
-If NO keywords or personal details are found, respond with: "NO_RESPONSE"
+Convert first person (I, my, me) to second person (you, your, you're) in the response.
 
-Only respond if keywords/personal details are detected. Be very strict about this.`;
+If NO personal details are found, respond with: "NO_RESPONSE"
+
+Only respond if personal details are detected. Be very strict about this.`;
 
     try {
       const result = await this.model.generateContent(prompt);
@@ -89,22 +94,30 @@ Only respond if keywords/personal details are detected. Be very strict about thi
   fallbackKeywordDetection(userMessage) {
     const message = userMessage.toLowerCase();
     
-    // Check for birthday patterns
-    if (message.includes('birthday') || message.includes('born on')) {
-      return `gotcha, ${userMessage}`;
+    // Check for personal information patterns
+    if (message.includes('birthday') || message.includes('born on') ||
+        message.includes('phone number') || message.includes('phone') ||
+        message.includes('like') || message.includes('love') ||
+        message.includes('i am') || message.includes('i\'m') ||
+        message.includes('i have') || message.includes('i work') ||
+        /\d{3}[-.]?\d{3}[-.]?\d{4}/.test(message) ||
+        /\d{1,2}(st|nd|rd|th)?\s+(january|february|march|april|may|june|july|august|september|october|november|december|jan|feb|mar|apr|may|jun|jul|aug|sep|oct|nov|dec)/i.test(message)) {
+      
+      // Convert first person to second person
+      let convertedMessage = userMessage
+        .replace(/\bI am\b/gi, 'you\'re')
+        .replace(/\bI'm\b/gi, 'you\'re')
+        .replace(/\bI like\b/gi, 'you like')
+        .replace(/\bI love\b/gi, 'you love')
+        .replace(/\bI have\b/gi, 'you have')
+        .replace(/\bI work\b/gi, 'you work')
+        .replace(/\bmy\b/gi, 'your')
+        .replace(/\bme\b/gi, 'you');
+      
+      return `gotcha, ${convertedMessage}`;
     }
     
-    // Check for phone number patterns
-    if (message.includes('phone number') || message.includes('phone') || /\d{3}[-.]?\d{3}[-.]?\d{4}/.test(message)) {
-      return `gotcha, ${userMessage}`;
-    }
-    
-    // Check for date patterns (basic)
-    if (/\d{1,2}(st|nd|rd|th)?\s+(january|february|march|april|may|june|july|august|september|october|november|december|jan|feb|mar|apr|may|jun|jul|aug|sep|oct|nov|dec)/i.test(message)) {
-      return `gotcha, ${userMessage}`;
-    }
-    
-    // No keywords detected
+    // No personal details detected
     return null;
   }
 
