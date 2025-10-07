@@ -18,18 +18,18 @@ class GeminiAIService {
   async generateGreetingResponse(userName, userMessage) {
     // Fallback response if Gemini is not available
     if (!this.isAvailable) {
-      return "Hello!";
+      return `Hello ${userName}!`;
     }
 
     const prompt = `The user "${userName}" sent a greeting message: "${userMessage}".
 
-Respond with a simple, friendly greeting back. Keep it short and casual. Examples:
-- "Hello!"
-- "Hi there!"
-- "Hey!"
-- "Hello! How are you?"
+Respond with a simple, friendly greeting back that includes their name. Keep it short and casual. Examples:
+- "Hello ${userName}!"
+- "Hi ${userName}!"
+- "Hey ${userName}!"
+- "Hello ${userName}! How are you?"
 
-Keep it under 20 characters and very simple.`;
+Keep it under 30 characters and include their name.`;
 
     try {
       const result = await this.model.generateContent(prompt);
@@ -37,7 +37,7 @@ Keep it under 20 characters and very simple.`;
       return response.text().trim();
     } catch (error) {
       console.error('Error generating greeting response:', error);
-      return "Hello!";
+      return `Hello ${userName}!`;
     }
   }
 
