@@ -50,28 +50,29 @@ Keep it under 30 characters and include their name.`;
 
     const prompt = `Analyze this message: "${userMessage}"
 
-Check if it contains ANY personal information:
-- "birthday" (with date)
-- "phone number" 
-- Any date mentioned with details
-- Personal preferences: "I like...", "I love...", "I am...", "I'm..."
-- Interests, hobbies, job, location, etc.
+Check if it contains:
+1. GREETINGS: "hello", "hi", "hey", "good morning", "good afternoon", "good evening"
+2. PERSONAL INFORMATION:
+   - "birthday" (with date)
+   - "phone number" 
+   - Any date mentioned with details
+   - Personal preferences: "I like...", "I love...", "I am...", "I'm..."
+   - Interests, hobbies, job, location, etc.
 
-If ANY personal details are found, respond with:
+If it's a GREETING, respond with a simple greeting back:
+- "Hello!" or "Hi there!" or "Hey!" or "Good morning!"
+
+If it contains PERSONAL INFORMATION, respond with:
 "gotcha, [convert first person to second person]"
 
 Examples:
+- "hello" → "Hello!"
+- "good morning" → "Good morning!"
 - "my birthday is on 26th feb" → "gotcha, your birthday is on 26th feb"
 - "I like pineapple" → "gotcha, you like pineapple"
 - "I'm a teacher" → "gotcha, you're a teacher"
-- "I love pizza" → "gotcha, you love pizza"
-- "I have a dog" → "gotcha, you have a dog"
 
-Convert first person (I, my, me) to second person (you, your, you're) in the response.
-
-If NO personal details are found, respond with: "NO_RESPONSE"
-
-Only respond if personal details are detected. Be very strict about this.`;
+If it's neither a greeting nor personal information, respond with: "NO_RESPONSE"`;
 
     try {
       const result = await this.model.generateContent(prompt);
@@ -93,6 +94,13 @@ Only respond if personal details are detected. Be very strict about this.`;
   // Fallback keyword detection using simple regex patterns
   fallbackKeywordDetection(userMessage) {
     const message = userMessage.toLowerCase();
+    
+    // Check for greetings first
+    if (message.includes('hello') || message.includes('hi') || 
+        message.includes('hey') || message.includes('good morning') ||
+        message.includes('good afternoon') || message.includes('good evening')) {
+      return "Hello!";
+    }
     
     // Check for personal information patterns
     if (message.includes('birthday') || message.includes('born on') ||
@@ -117,7 +125,7 @@ Only respond if personal details are detected. Be very strict about this.`;
       return `gotcha, ${convertedMessage}`;
     }
     
-    // No personal details detected
+    // No greeting or personal details detected
     return null;
   }
 
