@@ -2,6 +2,7 @@ const express = require('express');
 const axios = require('axios');
 const bodyParser = require('body-parser');
 const GeminiAIService = require('./gemini-service');
+const VectorService = require('./vector-service');
 require('dotenv').config();
 
 const app = express();
@@ -15,8 +16,18 @@ app.use(bodyParser.urlencoded({ extended: true }));
 const userStates = new Map();
 const conversationHistory = new Map(); // Store conversation history for context
 
-// Initialize Gemini AI service
+// Initialize services
 const geminiService = new GeminiAIService();
+const vectorService = new VectorService();
+
+// Initialize vector database
+vectorService.initializeIndex().then(success => {
+  if (success) {
+    console.log('✅ Vector database initialized');
+  } else {
+    console.log('📝 Using local storage fallback');
+  }
+});
 
 // WhatsApp API configuration
 const WHATSAPP_API_URL = `https://graph.facebook.com/v18.0/${process.env.WHATSAPP_PHONE_NUMBER_ID}/messages`;
@@ -106,6 +117,13 @@ async function handleIncomingMessage(message, contact) {
       const name = messageText.trim();
       const response = await geminiService.generateGreetingResponse(name, messageText);
       await sendMessage(phoneNumber, response);
+      
+      // Store the name in vector database
+      await vectorService.storeUserData(phoneNumber, name, 'name', name, {
+        source: 'user_input',
+        context: 'name_collection'
+      });
+      
       userStates.set(phoneNumber, 'conversation');
     } else if (userState === 'conversation') {
       // Handle ongoing conversation - check for keywords or greetings
@@ -115,12 +133,43 @@ async function handleIncomingMessage(message, contact) {
       // Only send response if one is generated (not null)
       if (response) {
         await sendMessage(phoneNumber, response);
+        
+        // If it's a "gotcha" response, store the personal information
+        if (response.startsWith('gotcha,')) {
+          const dataType = determineDataType(messageText);
+          await vectorService.storeUserData(phoneNumber, userName, dataType, messageText, {
+            source: 'user_input',
+            context: 'personal_information',
+            response: response
+          });
+        }
       }
       // If response is null, no message is sent (as requested)
     }
   } catch (error) {
     console.error('Error generating AI response:', error);
     // No fallback response - only respond when keywords are detected
+  }
+}
+
+// Helper function to determine data type from message content
+function determineDataType(messageText) {
+  const text = messageText.toLowerCase();
+  
+  if (text.includes('birthday') || text.includes('born')) {
+    return 'birthday';
+  } else if (text.includes('phone') || text.includes('number')) {
+    return 'phone';
+  } else if (text.includes('like') || text.includes('love')) {
+    return 'preference';
+  } else if (text.includes('i am') || text.includes('i\'m')) {
+    return 'identity';
+  } else if (text.includes('work') || text.includes('job')) {
+    return 'work';
+  } else if (text.includes('have') || text.includes('own')) {
+    return 'possession';
+  } else {
+    return 'interest';
   }
 }
 
@@ -164,6 +213,44 @@ app.get('/health', (req, res) => {
     timestamp: new Date().toISOString(),
     service: 'WhatsApp Business Platform'
   });
+});
+
+// Data management endpoints
+app.get('/api/user/:phoneNumber/profile', async (req, res) => {
+  try {
+    const { phoneNumber } = req.params;
+    const profile = await vectorService.getUserProfile(phoneNumber);
+    res.json(profile);
+  } catch (error) {
+    console.error('Error retrieving user profile:', error);
+    res.status(500).json({ error: 'Failed to retrieve user profile' });
+  }
+});
+
+app.get('/api/user/:phoneNumber/data', async (req, res) => {
+  try {
+    const { phoneNumber } = req.params;
+    const { query, limit = 10 } = req.query;
+    const data = await vectorService.retrieveUserData(phoneNumber, query, parseInt(limit));
+    res.json(data);
+  } catch (error) {
+    console.error('Error retrieving user data:', error);
+    res.status(500).json({ error: 'Failed to retrieve user data' });
+  }
+});
+
+app.get('/api/search', async (req, res) => {
+  try {
+    const { query, limit = 5 } = req.query;
+    if (!query) {
+      return res.status(400).json({ error: 'Query parameter is required' });
+    }
+    const results = await vectorService.searchSimilarData(query, parseInt(limit));
+    res.json(results);
+  } catch (error) {
+    console.error('Error searching data:', error);
+    res.status(500).json({ error: 'Failed to search data' });
+  }
 });
 
 // Start server
