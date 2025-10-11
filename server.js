@@ -114,18 +114,74 @@ async function handleIncomingMessage(message, contact) {
       await sendMessage(phoneNumber, response);
       userStates.set(phoneNumber, 'waiting_for_name_response');
     } else if (userState === 'waiting_for_name_response') {
-      // User provided their name, respond with personalized greeting
-      const name = messageText.trim();
-      const response = await geminiService.generateGreetingResponse(name, messageText);
-      await sendMessage(phoneNumber, response);
+      // Check if user is responding to a name update confirmation
+      if (pendingUpdates.has(phoneNumber)) {
+        const pendingUpdate = pendingUpdates.get(phoneNumber);
+        const confirmation = await geminiService.checkConfirmationResponse(messageText);
+        
+        if (confirmation === 'yes') {
+          // User confirmed name update
+          await vectorService.updateUserData(
+            phoneNumber, 
+            userName, 
+            pendingUpdate.dataType, 
+            pendingUpdate.newContent, 
+            pendingUpdate.existingId,
+            {
+              source: 'user_input',
+              context: 'name_update',
+              confirmed: true
+            }
+          );
+          await sendMessage(phoneNumber, `✅ Updated! Your name has been changed to ${pendingUpdate.newContent}.`);
+          pendingUpdates.delete(phoneNumber);
+          userStates.set(phoneNumber, 'conversation');
+        } else if (confirmation === 'no') {
+          // User declined name update, ask for name again
+          await sendMessage(phoneNumber, `👍 No problem! Please tell me your name.`);
+          pendingUpdates.delete(phoneNumber);
+        } else {
+          // Unclear response, ask again
+          await sendMessage(phoneNumber, `Please reply with "yes" to update your name or "no" to keep your current name.`);
+        }
+        return;
+      }
       
-      // Store the name in vector database
-      await vectorService.storeUserData(phoneNumber, name, 'name', name, {
-        source: 'user_input',
-        context: 'name_collection'
-      });
+      // Check if user already has a name stored (trying to update)
+      const existingNameData = await vectorService.checkForExistingData(phoneNumber, 'name', messageText);
       
-      userStates.set(phoneNumber, 'conversation');
+      if (existingNameData.exists) {
+        // User already has a name, ask for confirmation to update
+        const confirmationMessage = await geminiService.generateUpdateConfirmation(
+          'name', 
+          existingNameData.existingContent, 
+          messageText
+        );
+        await sendMessage(phoneNumber, confirmationMessage);
+        
+        // Store pending update
+        pendingUpdates.set(phoneNumber, {
+          dataType: 'name',
+          newContent: messageText,
+          existingId: existingNameData.existingId,
+          existingContent: existingNameData.existingContent
+        });
+        
+        // Stay in waiting_for_name_response state until they confirm
+      } else {
+        // First time providing name, store it
+        const name = messageText.trim();
+        const response = await geminiService.generateGreetingResponse(name, messageText);
+        await sendMessage(phoneNumber, response);
+        
+        // Store the name in vector database
+        await vectorService.storeUserData(phoneNumber, name, 'name', name, {
+          source: 'user_input',
+          context: 'name_collection'
+        });
+        
+        userStates.set(phoneNumber, 'conversation');
+      }
     } else if (userState === 'conversation') {
       // Check if user is responding to an update confirmation
       if (pendingUpdates.has(phoneNumber)) {
