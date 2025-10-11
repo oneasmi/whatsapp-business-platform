@@ -21,7 +21,5 @@ services:
       # Optional: Pinecone vector database (app will work without it using local storage)
       - key: PINECONE_API_KEY
         sync: false  # Set this in Render dashboard for vector storage
-      - key: PINECONE_ENVIRONMENT
-        sync: false  # Set this in Render dashboard (e.g., us-west1-gcp)
       - key: PINECONE_INDEX_NAME
         sync: false  # Set this in Render dashboard (default: whatsapp-user-data)

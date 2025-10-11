@@ -3,14 +3,12 @@ const { Pinecone } = require('@pinecone-database/pinecone');
 class VectorService {
   constructor() {
     this.apiKey = process.env.PINECONE_API_KEY;
-    this.environment = process.env.PINECONE_ENVIRONMENT;
     this.indexName = process.env.PINECONE_INDEX_NAME || 'whatsapp-user-data';
     this.isAvailable = !!this.apiKey;
     
     if (this.isAvailable) {
       this.pinecone = new Pinecone({
-        apiKey: this.apiKey,
-        environment: this.environment
+        apiKey: this.apiKey
       });
       this.index = null;
     } else {
