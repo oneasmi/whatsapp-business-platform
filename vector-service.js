@@ -124,6 +124,90 @@ class VectorService {
     return cleanContent;
   }
 
+  // Check if data already exists and needs updating
+  async checkForExistingData(phoneNumber, dataType, newContent) {
+    try {
+      const userData = await this.retrieveUserData(phoneNumber);
+      const existingData = userData.find(item => item.dataType === dataType);
+      
+      if (existingData) {
+        return {
+          exists: true,
+          existingContent: existingData.content,
+          existingId: existingData.id
+        };
+      }
+      
+      return { exists: false };
+    } catch (error) {
+      console.error('❌ Error checking for existing data:', error);
+      return { exists: false };
+    }
+  }
+
+  // Update existing data
+  async updateUserData(phoneNumber, userName, dataType, newContent, existingId, metadata = {}) {
+    if (!this.isAvailable) {
+      console.log('📝 Updating data locally (vector storage not available)');
+      return this.updateLocally(phoneNumber, userName, dataType, newContent, existingId, metadata);
+    }
+
+    try {
+      const embedding = this.generateEmbedding(newContent);
+      
+      const vectorData = {
+        id: existingId,
+        values: embedding,
+        metadata: {
+          phoneNumber,
+          userName,
+          dataType,
+          content: newContent,
+          timestamp: new Date().toISOString(),
+          updated: true,
+          ...metadata
+        }
+      };
+
+      await this.index.upsert([vectorData]);
+      console.log('✅ Data updated in vector database:', {
+        phoneNumber,
+        userName,
+        dataType,
+        content: newContent.substring(0, 50) + '...'
+      });
+
+      return existingId;
+    } catch (error) {
+      console.error('❌ Error updating data in vector database:', error);
+      return this.updateLocally(phoneNumber, userName, dataType, newContent, existingId, metadata);
+    }
+  }
+
+  // Fallback local update
+  updateLocally(phoneNumber, userName, dataType, newContent, existingId, metadata = {}) {
+    if (!global.userDataStore || !global.userDataStore.has(phoneNumber)) {
+      return null;
+    }
+
+    const userData = global.userDataStore.get(phoneNumber);
+    const existingIndex = userData.findIndex(item => item.id === existingId);
+    
+    if (existingIndex !== -1) {
+      userData[existingIndex] = {
+        ...userData[existingIndex],
+        content: newContent,
+        timestamp: new Date().toISOString(),
+        updated: true,
+        ...metadata
+      };
+      console.log('📝 Data updated locally:', userData[existingIndex]);
+      return existingId;
+    }
+    
+    return null;
+  }
+
   // Store user data in vector database
   async storeUserData(phoneNumber, userName, dataType, content, metadata = {}) {
     if (!this.isAvailable) {

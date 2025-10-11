@@ -14,6 +14,39 @@ class GeminiAIService {
     }
   }
 
+  // Generate update confirmation prompt
+  async generateUpdateConfirmation(dataType, existingContent, newContent) {
+    const dataTypeLabels = {
+      'birthday': 'birthday',
+      'phone': 'phone number',
+      'name': 'name',
+      'preference': 'preference',
+      'work': 'job/profession',
+      'identity': 'identity'
+    };
+
+    const label = dataTypeLabels[dataType] || dataType;
+    
+    return `I already have your ${label} stored as: "${existingContent}"
+
+You're trying to update it to: "${newContent}"
+
+Are you sure you want to update your ${label}? Please reply with "yes" to update or "no" to keep the current information.`;
+  }
+
+  // Check if user response is a confirmation (yes/no)
+  async checkConfirmationResponse(userMessage) {
+    const message = userMessage.toLowerCase().trim();
+    
+    if (message === 'yes' || message === 'y' || message === 'yeah' || message === 'sure' || message === 'ok' || message === 'okay') {
+      return 'yes';
+    } else if (message === 'no' || message === 'n' || message === 'nope' || message === 'nah') {
+      return 'no';
+    }
+    
+    return null; // Not a clear yes/no response
+  }
+
   // Generate a greeting response (simple greeting back)
   async generateGreetingResponse(userName, userMessage) {
     // Fallback response if Gemini is not available

@@ -15,6 +15,7 @@ app.use(bodyParser.urlencoded({ extended: true }));
 // Store user states (in production, use a database)
 const userStates = new Map();
 const conversationHistory = new Map(); // Store conversation history for context
+const pendingUpdates = new Map(); // Store pending data updates waiting for confirmation
 
 // Initialize services
 const geminiService = new GeminiAIService();
@@ -126,6 +127,38 @@ async function handleIncomingMessage(message, contact) {
       
       userStates.set(phoneNumber, 'conversation');
     } else if (userState === 'conversation') {
+      // Check if user is responding to an update confirmation
+      if (pendingUpdates.has(phoneNumber)) {
+        const pendingUpdate = pendingUpdates.get(phoneNumber);
+        const confirmation = await geminiService.checkConfirmationResponse(messageText);
+        
+        if (confirmation === 'yes') {
+          // User confirmed update
+          await vectorService.updateUserData(
+            phoneNumber, 
+            userName, 
+            pendingUpdate.dataType, 
+            pendingUpdate.newContent, 
+            pendingUpdate.existingId,
+            {
+              source: 'user_input',
+              context: 'data_update',
+              confirmed: true
+            }
+          );
+          await sendMessage(phoneNumber, `✅ Updated! Your ${pendingUpdate.dataType} has been changed.`);
+          pendingUpdates.delete(phoneNumber);
+        } else if (confirmation === 'no') {
+          // User declined update
+          await sendMessage(phoneNumber, `👍 No problem! I'll keep your current ${pendingUpdate.dataType} as is.`);
+          pendingUpdates.delete(phoneNumber);
+        } else {
+          // Unclear response, ask again
+          await sendMessage(phoneNumber, `Please reply with "yes" to update or "no" to keep your current ${pendingUpdate.dataType}.`);
+        }
+        return;
+      }
+      
       // Handle ongoing conversation - check for keywords or greetings
       const history = conversationHistory.get(phoneNumber).slice(-5); // Last 5 messages for context
       const response = await geminiService.generateConversationResponse(userName, messageText, history);
@@ -139,14 +172,37 @@ async function handleIncomingMessage(message, contact) {
         } else {
           await sendMessage(phoneNumber, response);
           
-          // If it's a "gotcha" response, store the personal information
+          // If it's a "gotcha" response, check for existing data first
           if (response.startsWith('gotcha,')) {
             const dataType = determineDataType(messageText);
-            await vectorService.storeUserData(phoneNumber, userName, dataType, messageText, {
-              source: 'user_input',
-              context: 'personal_information',
-              response: response
-            });
+            
+            // Check if data already exists
+            const existingData = await vectorService.checkForExistingData(phoneNumber, dataType, messageText);
+            
+            if (existingData.exists) {
+              // Data exists, ask for confirmation to update
+              const confirmationMessage = await geminiService.generateUpdateConfirmation(
+                dataType, 
+                existingData.existingContent, 
+                messageText
+              );
+              await sendMessage(phoneNumber, confirmationMessage);
+              
+              // Store pending update
+              pendingUpdates.set(phoneNumber, {
+                dataType,
+                newContent: messageText,
+                existingId: existingData.existingId,
+                existingContent: existingData.existingContent
+              });
+            } else {
+              // No existing data, store normally
+              await vectorService.storeUserData(phoneNumber, userName, dataType, messageText, {
+                source: 'user_input',
+                context: 'personal_information',
+                response: response
+              });
+            }
           }
         }
       }
