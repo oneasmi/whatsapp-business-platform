@@ -61,6 +61,69 @@ class VectorService {
     return Math.abs(hash);
   }
 
+  // Extract clean information from stored content
+  extractDateFromContent(content) {
+    // Remove common prefixes and extract just the date
+    let cleanContent = content
+      .replace(/^(my birthday is|i was born on|birthday is|born on)/i, '')
+      .replace(/^(i am born on|i'm born on)/i, '')
+      .trim();
+    
+    return cleanContent;
+  }
+
+  // Extract clean phone number from content
+  extractPhoneFromContent(content) {
+    // Remove common prefixes and extract just the number
+    let cleanContent = content
+      .replace(/^(my phone number is|phone number is|my number is|number is)/i, '')
+      .replace(/^(i am|i'm)/i, '')
+      .trim();
+    
+    return cleanContent;
+  }
+
+  // Extract clean name from content
+  extractNameFromContent(content) {
+    // Remove common prefixes and extract just the name
+    let cleanContent = content
+      .replace(/^(my name is|name is|i am|i'm)/i, '')
+      .trim();
+    
+    return cleanContent;
+  }
+
+  // Extract clean preference from content
+  extractCleanPreference(content) {
+    // Remove common prefixes and extract just the preference
+    let cleanContent = content
+      .replace(/^(i like|i love|i prefer|like|love|prefer)/i, '')
+      .trim();
+    
+    return cleanContent;
+  }
+
+  // Extract clean work information from content
+  extractCleanWork(content) {
+    // Remove common prefixes and extract just the work info
+    let cleanContent = content
+      .replace(/^(i work as|i work at|i am a|i'm a|work as|work at)/i, '')
+      .replace(/^(i am|i'm)/i, '')
+      .trim();
+    
+    return cleanContent;
+  }
+
+  // Extract clean identity from content
+  extractCleanIdentity(content) {
+    // Remove common prefixes and extract just the identity
+    let cleanContent = content
+      .replace(/^(i am a|i'm a|i am|i'm)/i, '')
+      .trim();
+    
+    return cleanContent;
+  }
+
   // Store user data in vector database
   async storeUserData(phoneNumber, userName, dataType, content, metadata = {}) {
     if (!this.isAvailable) {
@@ -255,7 +318,9 @@ class VectorService {
       if (questionLower.includes('birthday') || questionLower.includes('born')) {
         const birthdayData = userData.find(item => item.dataType === 'birthday');
         if (birthdayData) {
-          return `Your birthday is ${birthdayData.content}`;
+          // Extract just the date from the stored content
+          const cleanDate = this.extractDateFromContent(birthdayData.content);
+          return `Your birthday is ${cleanDate}`;
         } else {
           return "I don't know your birthday. Please tell me your birthday so I can remember it.";
         }
@@ -264,7 +329,8 @@ class VectorService {
       if (questionLower.includes('phone') || questionLower.includes('number')) {
         const phoneData = userData.find(item => item.dataType === 'phone');
         if (phoneData) {
-          return `Your phone number is ${phoneData.content}`;
+          const cleanPhone = this.extractPhoneFromContent(phoneData.content);
+          return `Your phone number is ${cleanPhone}`;
         } else {
           return "I don't know your phone number. Please tell me your phone number so I can remember it.";
         }
@@ -273,7 +339,8 @@ class VectorService {
       if (questionLower.includes('name')) {
         const nameData = userData.find(item => item.dataType === 'name');
         if (nameData) {
-          return `Your name is ${nameData.content}`;
+          const cleanName = this.extractNameFromContent(nameData.content);
+          return `Your name is ${cleanName}`;
         } else {
           return "I don't know your name. Please tell me your name so I can remember it.";
         }
@@ -282,7 +349,8 @@ class VectorService {
       if (questionLower.includes('like') || questionLower.includes('prefer')) {
         const preferences = userData.filter(item => item.dataType === 'preference');
         if (preferences.length > 0) {
-          const prefList = preferences.map(p => p.content).join(', ');
+          const cleanPrefs = preferences.map(p => this.extractCleanPreference(p.content));
+          const prefList = cleanPrefs.join(', ');
           return `You like: ${prefList}`;
         } else {
           return "I don't know what you like. Please tell me your preferences so I can remember them.";
@@ -292,7 +360,8 @@ class VectorService {
       if (questionLower.includes('work') || questionLower.includes('job')) {
         const workData = userData.find(item => item.dataType === 'work');
         if (workData) {
-          return `You work as ${workData.content}`;
+          const cleanWork = this.extractCleanWork(workData.content);
+          return `You work as ${cleanWork}`;
         } else {
           return "I don't know about your work. Please tell me about your job so I can remember it.";
         }
@@ -301,7 +370,8 @@ class VectorService {
       if (questionLower.includes('who') && questionLower.includes('you')) {
         const identityData = userData.filter(item => item.dataType === 'identity');
         if (identityData.length > 0) {
-          const identityList = identityData.map(i => i.content).join(', ');
+          const cleanIdentity = identityData.map(i => this.extractCleanIdentity(i.content));
+          const identityList = cleanIdentity.join(', ');
           return `You are: ${identityList}`;
         } else {
           return "I don't know much about you. Please tell me about yourself so I can remember.";
