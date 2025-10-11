@@ -246,6 +246,88 @@ class VectorService {
       return [];
     }
   }
+
+  // Answer user questions about their stored data
+  async answerUserQuestion(phoneNumber, question) {
+    try {
+      const userData = await this.retrieveUserData(phoneNumber);
+      const questionLower = question.toLowerCase();
+      
+      // Check for specific data types
+      if (questionLower.includes('birthday') || questionLower.includes('born')) {
+        const birthdayData = userData.find(item => item.dataType === 'birthday');
+        if (birthdayData) {
+          return `Your birthday is ${birthdayData.content}`;
+        } else {
+          return "I don't know your birthday. Please tell me your birthday so I can remember it.";
+        }
+      }
+      
+      if (questionLower.includes('phone') || questionLower.includes('number')) {
+        const phoneData = userData.find(item => item.dataType === 'phone');
+        if (phoneData) {
+          return `Your phone number is ${phoneData.content}`;
+        } else {
+          return "I don't know your phone number. Please tell me your phone number so I can remember it.";
+        }
+      }
+      
+      if (questionLower.includes('name')) {
+        const nameData = userData.find(item => item.dataType === 'name');
+        if (nameData) {
+          return `Your name is ${nameData.content}`;
+        } else {
+          return "I don't know your name. Please tell me your name so I can remember it.";
+        }
+      }
+      
+      if (questionLower.includes('like') || questionLower.includes('prefer')) {
+        const preferences = userData.filter(item => item.dataType === 'preference');
+        if (preferences.length > 0) {
+          const prefList = preferences.map(p => p.content).join(', ');
+          return `You like: ${prefList}`;
+        } else {
+          return "I don't know what you like. Please tell me your preferences so I can remember them.";
+        }
+      }
+      
+      if (questionLower.includes('work') || questionLower.includes('job')) {
+        const workData = userData.find(item => item.dataType === 'work');
+        if (workData) {
+          return `You work as ${workData.content}`;
+        } else {
+          return "I don't know about your work. Please tell me about your job so I can remember it.";
+        }
+      }
+      
+      if (questionLower.includes('who') && questionLower.includes('you')) {
+        const identityData = userData.filter(item => item.dataType === 'identity');
+        if (identityData.length > 0) {
+          const identityList = identityData.map(i => i.content).join(', ');
+          return `You are: ${identityList}`;
+        } else {
+          return "I don't know much about you. Please tell me about yourself so I can remember.";
+        }
+      }
+      
+      // Generic search for any relevant information
+      const relevantData = userData.filter(item => 
+        item.content.toLowerCase().includes(questionLower.split(' ')[0]) ||
+        questionLower.includes(item.dataType)
+      );
+      
+      if (relevantData.length > 0) {
+        const dataList = relevantData.map(d => d.content).join(', ');
+        return `Based on what you've told me: ${dataList}`;
+      }
+      
+      return "I don't have that information. Please tell me about it so I can remember it for you.";
+      
+    } catch (error) {
+      console.error('❌ Error answering user question:', error);
+      return "I'm having trouble accessing your information. Please try again.";
+    }
+  }
 }
 
 module.exports = VectorService;

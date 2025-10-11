@@ -132,16 +132,22 @@ async function handleIncomingMessage(message, contact) {
       
       // Only send response if one is generated (not null)
       if (response) {
-        await sendMessage(phoneNumber, response);
-        
-        // If it's a "gotcha" response, store the personal information
-        if (response.startsWith('gotcha,')) {
-          const dataType = determineDataType(messageText);
-          await vectorService.storeUserData(phoneNumber, userName, dataType, messageText, {
-            source: 'user_input',
-            context: 'personal_information',
-            response: response
-          });
+        // Handle data retrieval questions
+        if (response === "QUESTION_ABOUT_DATA") {
+          const dataAnswer = await vectorService.answerUserQuestion(phoneNumber, messageText);
+          await sendMessage(phoneNumber, dataAnswer);
+        } else {
+          await sendMessage(phoneNumber, response);
+          
+          // If it's a "gotcha" response, store the personal information
+          if (response.startsWith('gotcha,')) {
+            const dataType = determineDataType(messageText);
+            await vectorService.storeUserData(phoneNumber, userName, dataType, messageText, {
+              source: 'user_input',
+              context: 'personal_information',
+              response: response
+            });
+          }
         }
       }
       // If response is null, no message is sent (as requested)

@@ -52,7 +52,13 @@ Keep it under 30 characters and include their name.`;
 
 Check if it contains:
 1. GREETINGS: "hello", "hi", "hey", "good morning", "good afternoon", "good evening"
-2. PERSONAL INFORMATION:
+2. QUESTIONS about personal information:
+   - "what's my birthday?", "when is my birthday?"
+   - "what's my phone number?", "what's my name?"
+   - "what do I like?", "what are my preferences?"
+   - "what do I work as?", "what's my job?"
+   - "who am I?", "tell me about myself"
+3. PERSONAL INFORMATION:
    - "birthday" (with date)
    - "phone number" 
    - Any date mentioned with details
@@ -62,17 +68,22 @@ Check if it contains:
 If it's a GREETING, respond with a simple greeting back:
 - "Hello!" or "Hi there!" or "Hey!" or "Good morning!"
 
+If it's a QUESTION about personal information, respond with:
+"QUESTION_ABOUT_DATA"
+
 If it contains PERSONAL INFORMATION, respond with:
 "gotcha, [convert first person to second person]"
 
 Examples:
 - "hello" → "Hello!"
 - "good morning" → "Good morning!"
+- "what's my birthday?" → "QUESTION_ABOUT_DATA"
+- "what do I like?" → "QUESTION_ABOUT_DATA"
 - "my birthday is on 26th feb" → "gotcha, your birthday is on 26th feb"
 - "I like pineapple" → "gotcha, you like pineapple"
 - "I'm a teacher" → "gotcha, you're a teacher"
 
-If it's neither a greeting nor personal information, respond with: "NO_RESPONSE"`;
+If it's neither a greeting, question, nor personal information, respond with: "NO_RESPONSE"`;
 
     try {
       const result = await this.model.generateContent(prompt);
@@ -82,6 +93,11 @@ If it's neither a greeting nor personal information, respond with: "NO_RESPONSE"
       // Return null if no response should be given
       if (resultText === "NO_RESPONSE") {
         return null;
+      }
+      
+      // Return special marker for questions about data
+      if (resultText === "QUESTION_ABOUT_DATA") {
+        return "QUESTION_ABOUT_DATA";
       }
       
       return resultText;
@@ -100,6 +116,19 @@ If it's neither a greeting nor personal information, respond with: "NO_RESPONSE"
         message.includes('hey') || message.includes('good morning') ||
         message.includes('good afternoon') || message.includes('good evening')) {
       return "Hello!";
+    }
+    
+    // Check for questions about personal data
+    if (message.includes('what') && (message.includes('my') || message.includes('i'))) {
+      return "QUESTION_ABOUT_DATA";
+    }
+    
+    if (message.includes('when') && message.includes('birthday')) {
+      return "QUESTION_ABOUT_DATA";
+    }
+    
+    if (message.includes('who') && message.includes('am')) {
+      return "QUESTION_ABOUT_DATA";
     }
     
     // Check for personal information patterns
@@ -125,7 +154,7 @@ If it's neither a greeting nor personal information, respond with: "NO_RESPONSE"
       return `gotcha, ${convertedMessage}`;
     }
     
-    // No greeting or personal details detected
+    // No greeting, question, or personal details detected
     return null;
   }
 
