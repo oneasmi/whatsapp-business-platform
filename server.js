@@ -222,6 +222,10 @@ function determineDataType(messageText) {
     return 'birthday';
   } else if (text.includes('phone') || text.includes('number')) {
     return 'phone';
+  } else if (text.includes('my name is') || text.includes('name is') || 
+             (text.includes('i am') && !text.includes('a ') && !text.includes('an ')) ||
+             (text.includes('i\'m') && !text.includes('a ') && !text.includes('an '))) {
+    return 'name';
   } else if (text.includes('like') || text.includes('love')) {
     return 'preference';
   } else if (text.includes('i am') || text.includes('i\'m')) {
