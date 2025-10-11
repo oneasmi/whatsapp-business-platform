@@ -128,7 +128,9 @@ class VectorService {
   async checkForExistingData(phoneNumber, dataType, newContent) {
     try {
       const userData = await this.retrieveUserData(phoneNumber);
-      const existingData = userData.find(item => item.dataType === dataType);
+      const existingData = userData
+        .filter(item => item.dataType === dataType)
+        .sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp))[0]; // Get most recent
       
       if (existingData) {
         return {
@@ -249,7 +251,9 @@ class VectorService {
 
   // Fallback local storage when Pinecone is not available
   storeLocally(phoneNumber, userName, dataType, content, metadata = {}) {
+    const id = `local_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
     const data = {
+      id,
       phoneNumber,
       userName,
       dataType,
@@ -270,7 +274,7 @@ class VectorService {
 
     global.userDataStore.get(userKey).push(data);
     console.log('📝 Data stored locally:', data);
-    return `local_${Date.now()}`;
+    return id;
   }
 
   // Retrieve user data from vector database
