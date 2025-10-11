@@ -400,7 +400,9 @@ class VectorService {
       
       // Check for specific data types
       if (questionLower.includes('birthday') || questionLower.includes('born')) {
-        const birthdayData = userData.find(item => item.dataType === 'birthday');
+        const birthdayData = userData
+          .filter(item => item.dataType === 'birthday')
+          .sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp))[0]; // Get most recent
         if (birthdayData) {
           // Extract just the date from the stored content
           const cleanDate = this.extractDateFromContent(birthdayData.content);
@@ -411,7 +413,9 @@ class VectorService {
       }
       
       if (questionLower.includes('phone') || questionLower.includes('number')) {
-        const phoneData = userData.find(item => item.dataType === 'phone');
+        const phoneData = userData
+          .filter(item => item.dataType === 'phone')
+          .sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp))[0]; // Get most recent
         if (phoneData) {
           const cleanPhone = this.extractPhoneFromContent(phoneData.content);
           return `Your phone number is ${cleanPhone}`;
@@ -421,7 +425,9 @@ class VectorService {
       }
       
       if (questionLower.includes('name')) {
-        const nameData = userData.find(item => item.dataType === 'name');
+        const nameData = userData
+          .filter(item => item.dataType === 'name')
+          .sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp))[0]; // Get most recent
         if (nameData) {
           const cleanName = this.extractNameFromContent(nameData.content);
           return `Your name is ${cleanName}`;
@@ -442,7 +448,9 @@ class VectorService {
       }
       
       if (questionLower.includes('work') || questionLower.includes('job')) {
-        const workData = userData.find(item => item.dataType === 'work');
+        const workData = userData
+          .filter(item => item.dataType === 'work')
+          .sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp))[0]; // Get most recent
         if (workData) {
           const cleanWork = this.extractCleanWork(workData.content);
           return `You work as ${cleanWork}`;
@@ -452,7 +460,9 @@ class VectorService {
       }
       
       if (questionLower.includes('who') && questionLower.includes('you')) {
-        const identityData = userData.filter(item => item.dataType === 'identity');
+        const identityData = userData
+          .filter(item => item.dataType === 'identity')
+          .sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp)); // Get most recent first
         if (identityData.length > 0) {
           const cleanIdentity = identityData.map(i => this.extractCleanIdentity(i.content));
           const identityList = cleanIdentity.join(', ');
