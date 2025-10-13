@@ -108,7 +108,8 @@ Return only the JSON object, no other text.`;
     }
     
     if (text.includes('name is') || text.includes('i am') || text.includes('i\'m')) {
-      const nameMatch = messageText.match(/(?:name is|i am|i'm)\s+([a-zA-Z\s]+)/i);
+      // More specific regex to extract just the name
+      const nameMatch = messageText.match(/(?:my name is|name is|i am|i'm)\s+([a-zA-Z]+(?:\s+[a-zA-Z]+)*)/i);
       const name = nameMatch ? nameMatch[1].trim() : 'name mentioned';
       
       return {
