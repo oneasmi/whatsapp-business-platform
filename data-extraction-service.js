@@ -72,8 +72,8 @@ Return only the JSON object, no other text.`;
       const dateMatch = messageText.match(/(\d{1,2}(?:st|nd|rd|th)?\s+(?:jan|feb|mar|apr|may|jun|jul|aug|sep|oct|nov|dec|january|february|march|april|may|june|july|august|september|october|november|december)[a-z]*)/i);
       const date = dateMatch ? dateMatch[1] : 'date mentioned';
       
-      // Check if it's about someone else
-      const otherPersonMatch = messageText.match(/(\w+(?:\s+\w+)*)'s\s+birthday/i);
+      // Check if it's about someone else (Adam's birthday, Eve's birthday)
+      const otherPersonMatch = messageText.match(/([A-Za-z]+(?:\s+[A-Za-z]+)*)'s\s+birthday/i);
       if (otherPersonMatch) {
         return {
           dataType: 'birthday',
@@ -85,7 +85,7 @@ Return only the JSON object, no other text.`;
         };
       }
       
-      // Check for "my [person] birthday" pattern
+      // Check for "my [person] birthday" pattern (My sister, My brother, etc.)
       const myPersonMatch = messageText.match(/my\s+(\w+(?:\s+\w+)*)\s+birthday/i);
       if (myPersonMatch) {
         return {
