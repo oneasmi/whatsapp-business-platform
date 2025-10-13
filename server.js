@@ -3,6 +3,7 @@ const axios = require('axios');
 const bodyParser = require('body-parser');
 const GeminiAIService = require('./gemini-service');
 const VectorService = require('./vector-service');
+const DataExtractionService = require('./data-extraction-service');
 require('dotenv').config();
 
 const app = express();
@@ -20,6 +21,7 @@ const pendingUpdates = new Map(); // Store pending data updates waiting for conf
 // Initialize services
 const geminiService = new GeminiAIService();
 const vectorService = new VectorService();
+const dataExtractionService = new DataExtractionService();
 
 // Initialize vector database
 vectorService.initializeIndex().then(success => {
@@ -215,7 +217,7 @@ async function handleIncomingMessage(message, contact) {
         return;
       }
       
-      // Handle ongoing conversation - check for keywords or greetings
+      // Handle ongoing conversation - use intelligent data extraction
       const history = conversationHistory.get(phoneNumber).slice(-5); // Last 5 messages for context
       const response = await geminiService.generateConversationResponse(userName, messageText, history);
       
@@ -228,36 +230,60 @@ async function handleIncomingMessage(message, contact) {
         } else {
           await sendMessage(phoneNumber, response);
           
-          // If it's a "gotcha" response, check for existing data first
+          // If it's a "gotcha" response, extract structured data and store it
           if (response.startsWith('gotcha,')) {
-            const dataType = determineDataType(messageText);
+            const extractedData = await dataExtractionService.extractStructuredData(messageText, userName);
             
-            // Check if data already exists
-            const existingData = await vectorService.checkForExistingData(phoneNumber, dataType, messageText);
+            // Generate storage key based on subject and person
+            const storageKey = dataExtractionService.generateStorageKey(
+              phoneNumber, 
+              extractedData.dataType, 
+              extractedData.subject, 
+              extractedData.person
+            );
+            
+            // Check if data already exists for this specific key
+            const existingData = await vectorService.checkForExistingData(
+              phoneNumber, 
+              extractedData.dataType, 
+              extractedData.extractedData
+            );
             
             if (existingData.exists) {
               // Data exists, ask for confirmation to update
               const confirmationMessage = await geminiService.generateUpdateConfirmation(
-                dataType, 
+                extractedData.dataType, 
                 existingData.existingContent, 
-                messageText
+                extractedData.extractedData
               );
               await sendMessage(phoneNumber, confirmationMessage);
               
               // Store pending update
               pendingUpdates.set(phoneNumber, {
-                dataType,
-                newContent: messageText,
+                dataType: extractedData.dataType,
+                newContent: extractedData.extractedData,
                 existingId: existingData.existingId,
-                existingContent: existingData.existingContent
+                existingContent: existingData.existingContent,
+                subject: extractedData.subject,
+                person: extractedData.person
               });
             } else {
-              // No existing data, store normally
-              await vectorService.storeUserData(phoneNumber, userName, dataType, messageText, {
-                source: 'user_input',
-                context: 'personal_information',
-                response: response
-              });
+              // No existing data, store the extracted data
+              await vectorService.storeUserData(
+                phoneNumber, 
+                userName, 
+                extractedData.dataType, 
+                extractedData.extractedData, 
+                {
+                  source: 'user_input',
+                  context: 'personal_information',
+                  response: response,
+                  subject: extractedData.subject,
+                  person: extractedData.person,
+                  keywords: extractedData.keywords,
+                  date: extractedData.date
+                }
+              );
             }
           }
         }

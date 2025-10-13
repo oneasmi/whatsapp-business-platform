@@ -1,9 +1,11 @@
 const { GoogleGenerativeAI } = require('@google/generative-ai');
+const DataExtractionService = require('./data-extraction-service');
 
 class GeminiAIService {
   constructor() {
     this.apiKey = process.env.GEMINI_API_KEY;
     this.isAvailable = !!this.apiKey;
+    this.dataExtractionService = new DataExtractionService();
     
     if (this.isAvailable) {
       this.genAI = new GoogleGenerativeAI(this.apiKey);
@@ -193,15 +195,50 @@ If it's neither a greeting, question, nor personal information, respond with: "N
 
   // Generate a response for ongoing conversation (now simplified)
   async generateConversationResponse(userName, userMessage, conversationHistory = []) {
-    // First check for keywords
-    const keywordResponse = await this.checkForKeywordsAndRespond(userMessage);
+    // First, extract structured data to understand what the user is saying
+    const extractedData = await this.dataExtractionService.extractStructuredData(userMessage, userName);
     
-    if (keywordResponse) {
-      return keywordResponse;
+    // Check if it's a greeting
+    if (this.isGreeting(userMessage)) {
+      return this.generateGreetingResponse(userName, userMessage);
     }
     
-    // If no keywords detected, return null (no response)
+    // Check if it's a question about data
+    if (this.isDataQuestion(userMessage)) {
+      return "QUESTION_ABOUT_DATA";
+    }
+    
+    // Check if it contains personal information
+    if (this.containsPersonalInfo(extractedData)) {
+      return this.dataExtractionService.generateResponseMessage(extractedData, userName);
+    }
+    
+    // No response for other messages
     return null;
+  }
+
+  isGreeting(message) {
+    const greetings = ['hello', 'hi', 'hey', 'good morning', 'good afternoon', 'good evening', 'greetings'];
+    const lowerMessage = message.toLowerCase();
+    return greetings.some(greeting => lowerMessage.includes(greeting));
+  }
+
+  isDataQuestion(message) {
+    const questionPatterns = [
+      /what'?s?\s+my/i,
+      /when\s+is\s+my/i,
+      /who\s+am\s+i/i,
+      /tell\s+me\s+about\s+myself/i,
+      /what\s+do\s+i\s+like/i,
+      /what\s+are\s+my/i
+    ];
+    
+    return questionPatterns.some(pattern => pattern.test(message));
+  }
+
+  containsPersonalInfo(extractedData) {
+    const personalDataTypes = ['birthday', 'phone', 'name', 'preference', 'work', 'identity', 'trip', 'event'];
+    return personalDataTypes.includes(extractedData.dataType);
   }
 
   // Generate a follow-up response
