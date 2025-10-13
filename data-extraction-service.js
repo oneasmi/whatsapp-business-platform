@@ -18,7 +18,7 @@ class DataExtractionService {
 
 Extract the following information and return as JSON:
 {
-  "dataType": "birthday|phone|name|preference|work|identity|trip|event|other",
+  "dataType": "birthday|phone|name|preference|work|identity|trip|flight|event|remember|other",
   "subject": "self|other_person_name",
   "extractedData": "clean extracted data",
   "keywords": ["key", "words", "extracted"],
@@ -30,18 +30,21 @@ Rules:
 1. If it's about the user (me/my/I), set subject: "self"
 2. If it's about someone else (Adam's, John's, etc.), set subject: "other_person_name" and extract the person's name
 3. Extract only the meaningful data, not the full sentence
-4. For birthdays: extract just the date
-5. For trips/events: extract destination and date
+4. For any data with dates: extract the date
+5. For trips/flights: extract destination and date
 6. For preferences: extract the specific thing they like
 7. For work: extract the job title/role
 8. For names: extract just the name
+9. For remember requests: extract the data to be remembered
+10. Be flexible with data types - handle any type of personal information
 
 Examples:
 - "my birthday is on 15th sept" → {"dataType": "birthday", "subject": "self", "extractedData": "15th September", "keywords": ["birthday", "15th", "september"], "date": "15th September"}
 - "Adam's birthday is on 8th august" → {"dataType": "birthday", "subject": "Adam", "extractedData": "8th August", "keywords": ["birthday", "8th", "august"], "date": "8th August", "person": "Adam"}
 - "I like pineapple" → {"dataType": "preference", "subject": "self", "extractedData": "pineapple", "keywords": ["like", "pineapple"]}
-- "Can you remember my next trip to the US on 18th Dec?" → {"dataType": "trip", "subject": "self", "extractedData": "trip to US on 18th December", "keywords": ["trip", "US", "18th", "december"], "date": "18th December"}
+- "Can you remember my next trip to the US on 18th Dec?" → {"dataType": "remember", "subject": "self", "extractedData": "trip to US on 18th December", "keywords": ["remember", "trip", "US", "18th", "december"], "date": "18th December"}
 - "My name is John" → {"dataType": "name", "subject": "self", "extractedData": "John", "keywords": ["name", "john"]}
+- "Remember my meeting with Sarah tomorrow" → {"dataType": "remember", "subject": "self", "extractedData": "meeting with Sarah tomorrow", "keywords": ["remember", "meeting", "sarah"]}
 
 Return only the JSON object, no other text.`;
 

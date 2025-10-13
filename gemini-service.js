@@ -233,19 +233,22 @@ If it's neither a greeting, question, nor personal information, respond with: "N
 
   isDataQuestion(message) {
     const questionPatterns = [
+      // Questions about user's own data
       /what'?s?\s+my/i,
       /when\s+is\s+my/i,
       /who\s+am\s+i/i,
       /tell\s+me\s+about\s+myself/i,
       /what\s+do\s+i\s+like/i,
       /what\s+are\s+my/i,
-      // Questions about other people's data
-      /when\s+is\s+(\w+)'s\s+birthday/i,
-      /what'?s?\s+(\w+)'s\s+birthday/i,
-      /when\s+is\s+(\w+)'s\s+phone/i,
-      /what'?s?\s+(\w+)'s\s+phone/i,
-      /when\s+is\s+(\w+)'s\s+name/i,
-      /what'?s?\s+(\w+)'s\s+name/i
+      /do\s+i\s+have/i,
+      /have\s+i\s+told\s+you/i,
+      // Questions about other people's data (generic)
+      /when\s+is\s+(\w+)'s/i,
+      /what'?s?\s+(\w+)'s/i,
+      /does\s+(\w+)\s+have/i,
+      /has\s+(\w+)\s+told/i,
+      /what\s+do\s+you\s+know\s+about\s+(\w+)/i,
+      /tell\s+me\s+about\s+(\w+)/i
     ];
     
     return questionPatterns.some(pattern => pattern.test(message));

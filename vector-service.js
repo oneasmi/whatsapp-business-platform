@@ -419,20 +419,47 @@ class VectorService {
       const userData = await this.retrieveUserData(phoneNumber);
       const questionLower = question.toLowerCase();
       
-      // Check for questions about other people's data first
-      const otherPersonBirthdayMatch = question.match(/when\s+is\s+(\w+)'s\s+birthday/i);
-      if (otherPersonBirthdayMatch) {
-        const personName = otherPersonBirthdayMatch[1];
-        const personBirthdayData = userData
-          .filter(item => item.dataType === 'birthday' && 
+      // Check for questions about other people's data first (generic)
+      const otherPersonMatch = question.match(/(?:when\s+is|what'?s?)\s+(\w+)'s\s+(\w+)/i);
+      if (otherPersonMatch) {
+        const personName = otherPersonMatch[1];
+        const dataType = otherPersonMatch[2].toLowerCase();
+        
+        // Map common data types
+        const dataTypeMapping = {
+          'birthday': 'birthday',
+          'bday': 'birthday',
+          'phone': 'phone',
+          'number': 'phone',
+          'name': 'name',
+          'job': 'work',
+          'work': 'work',
+          'preference': 'preference',
+          'like': 'preference'
+        };
+        
+        const mappedDataType = dataTypeMapping[dataType] || dataType;
+        
+        const personData = userData
+          .filter(item => item.dataType === mappedDataType && 
                          (item.person === personName || item.metadata?.person === personName))
           .sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp))[0];
         
-        if (personBirthdayData) {
-          const cleanDate = this.extractDateFromContent(personBirthdayData.content);
-          return `${personName}'s birthday is ${cleanDate}`;
+        if (personData) {
+          let cleanContent = personData.content;
+          
+          // Clean content based on data type
+          if (mappedDataType === 'birthday') {
+            cleanContent = this.extractDateFromContent(personData.content);
+          } else if (mappedDataType === 'phone') {
+            cleanContent = this.extractPhoneFromContent(personData.content);
+          } else if (mappedDataType === 'name') {
+            cleanContent = this.extractNameFromContent(personData.content);
+          }
+          
+          return `${personName}'s ${dataType} is ${cleanContent}`;
         } else {
-          return `I don't know ${personName}'s birthday. Please tell me ${personName}'s birthday so I can remember it.`;
+          return `I don't know ${personName}'s ${dataType}. Please tell me ${personName}'s ${dataType} so I can remember it.`;
         }
       }
 
