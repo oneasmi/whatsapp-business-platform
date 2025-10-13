@@ -421,8 +421,9 @@ class VectorService {
       
       // Check for specific data types
       if (questionLower.includes('birthday') || questionLower.includes('born')) {
+        // Filter for user's own birthday (no person specified)
         const birthdayData = userData
-          .filter(item => item.dataType === 'birthday')
+          .filter(item => item.dataType === 'birthday' && !item.person && !item.metadata?.person)
           .sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp))[0]; // Get most recent
         if (birthdayData) {
           // Extract just the date from the stored content
@@ -434,8 +435,9 @@ class VectorService {
       }
       
       if (questionLower.includes('phone') || questionLower.includes('number')) {
+        // Filter for user's own phone (no person specified)
         const phoneData = userData
-          .filter(item => item.dataType === 'phone')
+          .filter(item => item.dataType === 'phone' && !item.person && !item.metadata?.person)
           .sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp))[0]; // Get most recent
         if (phoneData) {
           const cleanPhone = this.extractPhoneFromContent(phoneData.content);
@@ -446,8 +448,9 @@ class VectorService {
       }
       
       if (questionLower.includes('name')) {
+        // Filter for user's own name (no person specified)
         const nameData = userData
-          .filter(item => item.dataType === 'name')
+          .filter(item => item.dataType === 'name' && !item.person && !item.metadata?.person)
           .sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp))[0]; // Get most recent
         if (nameData) {
           const cleanName = this.extractNameFromContent(nameData.content);
@@ -458,7 +461,8 @@ class VectorService {
       }
       
       if (questionLower.includes('like') || questionLower.includes('prefer')) {
-        const preferences = userData.filter(item => item.dataType === 'preference');
+        // Filter for user's own preferences (no person specified)
+        const preferences = userData.filter(item => item.dataType === 'preference' && !item.person && !item.metadata?.person);
         if (preferences.length > 0) {
           const cleanPrefs = preferences.map(p => this.extractCleanPreference(p.content));
           const prefList = cleanPrefs.join(', ');
@@ -469,8 +473,9 @@ class VectorService {
       }
       
       if (questionLower.includes('work') || questionLower.includes('job')) {
+        // Filter for user's own work (no person specified)
         const workData = userData
-          .filter(item => item.dataType === 'work')
+          .filter(item => item.dataType === 'work' && !item.person && !item.metadata?.person)
           .sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp))[0]; // Get most recent
         if (workData) {
           const cleanWork = this.extractCleanWork(workData.content);
@@ -481,8 +486,9 @@ class VectorService {
       }
       
       if (questionLower.includes('who') && questionLower.includes('you')) {
+        // Filter for user's own identity (no person specified)
         const identityData = userData
-          .filter(item => item.dataType === 'identity')
+          .filter(item => item.dataType === 'identity' && !item.person && !item.metadata?.person)
           .sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp)); // Get most recent first
         if (identityData.length > 0) {
           const cleanIdentity = identityData.map(i => this.extractCleanIdentity(i.content));
