@@ -245,7 +245,7 @@ If it's neither a greeting, question, nor personal information, respond with: "N
   }
 
   containsPersonalInfo(extractedData) {
-    const personalDataTypes = ['birthday', 'phone', 'name', 'preference', 'work', 'identity', 'trip', 'flight', 'event'];
+    const personalDataTypes = ['birthday', 'phone', 'name', 'preference', 'work', 'identity', 'trip', 'flight', 'remember', 'event'];
     return personalDataTypes.includes(extractedData.dataType);
   }
 

@@ -153,6 +153,33 @@ Return only the JSON object, no other text.`;
       };
     }
     
+    // Check for "remember" requests first
+    if (text.includes('remember') || text.includes('note down') || text.includes('keep in mind') || text.includes('can you remember')) {
+      // Extract the data that needs to be remembered
+      const rememberMatch = messageText.match(/(?:remember|note down|keep in mind|can you remember).*?(?:my|that|this)\s+([^.!?]+)/i);
+      let dataToRemember = 'data to remember';
+      
+      if (rememberMatch) {
+        dataToRemember = rememberMatch[1].trim();
+        // Clean up the data
+        dataToRemember = dataToRemember.replace(/^(which is|that is|on)\s+/i, '').trim();
+      } else {
+        // Fallback: extract everything after "remember"
+        const fallbackMatch = messageText.match(/(?:remember|note down|keep in mind|can you remember)\s+(.+)/i);
+        if (fallbackMatch) {
+          dataToRemember = fallbackMatch[1].trim();
+        }
+      }
+      
+      return {
+        dataType: 'remember',
+        subject: 'self',
+        extractedData: dataToRemember,
+        keywords: ['remember', 'note', 'keep'],
+        date: null
+      };
+    }
+    
     if (text.includes('trip') || text.includes('travel') || text.includes('flight')) {
       // Handle trip/flight data
       let destination = 'trip mentioned';
@@ -217,6 +244,8 @@ Return only the JSON object, no other text.`;
           return `gotcha, your trip is ${data}`;
         case 'flight':
           return `gotcha, your flight is ${data}`;
+        case 'remember':
+          return `gotcha, I'll remember ${data}`;
         case 'work':
           return `gotcha, you work as ${data}`;
         default:
