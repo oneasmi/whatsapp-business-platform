@@ -171,13 +171,15 @@ async function handleIncomingMessage(message, contact) {
         
         // Stay in waiting_for_name_response state until they confirm
       } else {
-        // First time providing name, store it
-        const name = messageText.trim();
-        const response = await geminiService.generateGreetingResponse(name, messageText);
+        // First time providing name, extract the name properly
+        const extractedData = await dataExtractionService.extractStructuredData(messageText, userName);
+        const extractedName = extractedData.extractedData;
+        
+        const response = await geminiService.generateGreetingResponse(extractedName, messageText);
         await sendMessage(phoneNumber, response);
         
-        // Store the name in vector database
-        await vectorService.storeUserData(phoneNumber, name, 'name', name, {
+        // Store the extracted name in vector database
+        await vectorService.storeUserData(phoneNumber, extractedName, 'name', extractedName, {
           source: 'user_input',
           context: 'name_collection'
         });

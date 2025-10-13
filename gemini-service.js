@@ -9,7 +9,7 @@ class GeminiAIService {
     
     if (this.isAvailable) {
       this.genAI = new GoogleGenerativeAI(this.apiKey);
-      this.model = this.genAI.getGenerativeModel({ model: "gemini-1.5-pro" });
+      this.model = this.genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
     } else {
       console.warn('⚠️  Gemini API key not found. Running in fallback mode.');
       this.model = null;
