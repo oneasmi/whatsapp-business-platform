@@ -9,7 +9,7 @@ class GeminiAIService {
     
     if (this.isAvailable) {
       this.genAI = new GoogleGenerativeAI(this.apiKey);
-      this.model = this.genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
+      this.model = this.genAI.getGenerativeModel({ model: "gemini-1.5-pro" });
     } else {
       console.warn('⚠️  Gemini API key not found. Running in fallback mode.');
       this.model = null;
@@ -272,6 +272,11 @@ Respond as a helpful business representative:`;
 
   // Generate a name collection response
   async generateNameCollectionResponse() {
+    // Fallback response if Gemini is not available
+    if (!this.isAvailable) {
+      return `Hello! Welcome to our WhatsApp Business service. What's your name so I can assist you better?`;
+    }
+
     const prompt = `You are a WhatsApp Business assistant starting a conversation with a new customer.
 
 Your role is to:
@@ -284,14 +289,9 @@ Your role is to:
 Generate a welcoming message that asks for their name:`;
 
     try {
-      const response = await this.client.chat.completions.create({
-        model: "gpt-3.5-turbo",
-        messages: [{ role: "user", content: prompt }],
-        max_tokens: 100,
-        temperature: 0.7,
-      });
-
-      return response.choices[0].message.content.trim();
+      const result = await this.model.generateContent(prompt);
+      const response = await result.response;
+      return response.text().trim();
     } catch (error) {
       console.error('Error generating name collection response:', error);
       return `Hello! Welcome to our WhatsApp Business service. What's your name so I can assist you better?`;
