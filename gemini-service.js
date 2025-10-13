@@ -238,7 +238,14 @@ If it's neither a greeting, question, nor personal information, respond with: "N
       /who\s+am\s+i/i,
       /tell\s+me\s+about\s+myself/i,
       /what\s+do\s+i\s+like/i,
-      /what\s+are\s+my/i
+      /what\s+are\s+my/i,
+      // Questions about other people's data
+      /when\s+is\s+(\w+)'s\s+birthday/i,
+      /what'?s?\s+(\w+)'s\s+birthday/i,
+      /when\s+is\s+(\w+)'s\s+phone/i,
+      /what'?s?\s+(\w+)'s\s+phone/i,
+      /when\s+is\s+(\w+)'s\s+name/i,
+      /what'?s?\s+(\w+)'s\s+name/i
     ];
     
     return questionPatterns.some(pattern => pattern.test(message));

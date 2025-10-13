@@ -419,6 +419,23 @@ class VectorService {
       const userData = await this.retrieveUserData(phoneNumber);
       const questionLower = question.toLowerCase();
       
+      // Check for questions about other people's data first
+      const otherPersonBirthdayMatch = question.match(/when\s+is\s+(\w+)'s\s+birthday/i);
+      if (otherPersonBirthdayMatch) {
+        const personName = otherPersonBirthdayMatch[1];
+        const personBirthdayData = userData
+          .filter(item => item.dataType === 'birthday' && 
+                         (item.person === personName || item.metadata?.person === personName))
+          .sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp))[0];
+        
+        if (personBirthdayData) {
+          const cleanDate = this.extractDateFromContent(personBirthdayData.content);
+          return `${personName}'s birthday is ${cleanDate}`;
+        } else {
+          return `I don't know ${personName}'s birthday. Please tell me ${personName}'s birthday so I can remember it.`;
+        }
+      }
+
       // Check for specific data types
       if (questionLower.includes('birthday') || questionLower.includes('born')) {
         // Filter for user's own birthday (no person specified)
