@@ -218,8 +218,16 @@ If it's neither a greeting, question, nor personal information, respond with: "N
   }
 
   isGreeting(message) {
-    const greetings = ['hello', 'hi', 'hey', 'good morning', 'good afternoon', 'good evening', 'greetings'];
     const lowerMessage = message.toLowerCase();
+    
+    // Check for explicit greetings only
+    const greetings = ['hello', 'hi', 'hey', 'good morning', 'good afternoon', 'good evening', 'greetings'];
+    
+    // Don't treat "remember" requests as greetings
+    if (lowerMessage.includes('remember') || lowerMessage.includes('keep in mind') || lowerMessage.includes('can you remember')) {
+      return false;
+    }
+    
     return greetings.some(greeting => lowerMessage.includes(greeting));
   }
 
@@ -237,7 +245,7 @@ If it's neither a greeting, question, nor personal information, respond with: "N
   }
 
   containsPersonalInfo(extractedData) {
-    const personalDataTypes = ['birthday', 'phone', 'name', 'preference', 'work', 'identity', 'trip', 'event'];
+    const personalDataTypes = ['birthday', 'phone', 'name', 'preference', 'work', 'identity', 'trip', 'flight', 'event'];
     return personalDataTypes.includes(extractedData.dataType);
   }
 

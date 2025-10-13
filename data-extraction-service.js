@@ -153,15 +153,32 @@ Return only the JSON object, no other text.`;
       };
     }
     
-    if (text.includes('trip') || text.includes('travel')) {
-      const tripMatch = messageText.match(/(?:trip|travel).*?to\s+([^.!?]+)/i);
-      const destination = tripMatch ? tripMatch[1].trim() : 'trip mentioned';
+    if (text.includes('trip') || text.includes('travel') || text.includes('flight')) {
+      // Handle trip/flight data
+      let destination = 'trip mentioned';
+      let dataType = 'trip';
+      
+      if (text.includes('flight')) {
+        dataType = 'flight';
+        // Better regex for flight extraction
+        const flightMatch = messageText.match(/(?:flight|trip).*?(?:to\s+)?([^.!?]+)/i);
+        if (flightMatch) {
+          destination = flightMatch[1].trim();
+          // Clean up the destination
+          destination = destination.replace(/^(which is|that is|on)\s+/i, '').trim();
+        }
+      } else {
+        const tripMatch = messageText.match(/(?:trip|travel).*?to\s+([^.!?]+)/i);
+        if (tripMatch) {
+          destination = tripMatch[1].trim();
+        }
+      }
       
       return {
-        dataType: 'trip',
+        dataType: dataType,
         subject: 'self',
         extractedData: destination,
-        keywords: ['trip', 'travel'],
+        keywords: ['trip', 'travel', 'flight'],
         date: null
       };
     }
@@ -198,6 +215,8 @@ Return only the JSON object, no other text.`;
           return `gotcha, you like ${data}`;
         case 'trip':
           return `gotcha, your trip is ${data}`;
+        case 'flight':
+          return `gotcha, your flight is ${data}`;
         case 'work':
           return `gotcha, you work as ${data}`;
         default:
