@@ -138,6 +138,23 @@ Return only the JSON object, no other text.`;
     }
     
     if (text.includes('like') || text.includes('love')) {
+      // Check if it's about someone else first
+      const otherPersonMatch = messageText.match(/([A-Za-z]+(?:\s+[A-Za-z]+)*)\s+(?:likes|loves)\s+([^.!?]+)/i);
+      if (otherPersonMatch) {
+        const personName = otherPersonMatch[1];
+        const preference = otherPersonMatch[2].trim();
+        
+        return {
+          dataType: 'preference',
+          subject: personName,
+          extractedData: preference,
+          keywords: ['like', 'love'],
+          date: null,
+          person: personName
+        };
+      }
+      
+      // Check for user's own preferences
       const likeMatch = messageText.match(/(?:like|love)\s+([^.!?]+)/i);
       const preference = likeMatch ? likeMatch[1].trim() : 'preference mentioned';
       
