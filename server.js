@@ -110,12 +110,12 @@ async function handleIncomingMessage(message, contact) {
   conversationHistory.get(phoneNumber).push(messageText);
   
   try {
-    if (userState === 'waiting_for_name') {
+  if (userState === 'waiting_for_name') {
       // Ask for name using Gemini AI
       const response = await geminiService.generateNameCollectionResponse();
       await sendMessage(phoneNumber, response);
-      userStates.set(phoneNumber, 'waiting_for_name_response');
-    } else if (userState === 'waiting_for_name_response') {
+    userStates.set(phoneNumber, 'waiting_for_name_response');
+  } else if (userState === 'waiting_for_name_response') {
       // Check if user is responding to a name update confirmation
       if (pendingUpdates.has(phoneNumber)) {
         const pendingUpdate = pendingUpdates.get(phoneNumber);
@@ -184,9 +184,9 @@ async function handleIncomingMessage(message, contact) {
           context: 'name_collection'
         });
         
-        userStates.set(phoneNumber, 'conversation');
+    userStates.set(phoneNumber, 'conversation');
       }
-    } else if (userState === 'conversation') {
+  } else if (userState === 'conversation') {
       // Check if user is responding to an update confirmation
       if (pendingUpdates.has(phoneNumber)) {
         const pendingUpdate = pendingUpdates.get(phoneNumber);
@@ -248,7 +248,8 @@ async function handleIncomingMessage(message, contact) {
             const existingData = await vectorService.checkForExistingData(
               phoneNumber, 
               extractedData.dataType, 
-              extractedData.extractedData
+              extractedData.extractedData,
+              extractedData.person
             );
             
             if (existingData.exists) {

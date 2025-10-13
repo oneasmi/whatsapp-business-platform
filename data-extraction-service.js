@@ -73,7 +73,7 @@ Return only the JSON object, no other text.`;
       const date = dateMatch ? dateMatch[1] : 'date mentioned';
       
       // Check if it's about someone else
-      const otherPersonMatch = messageText.match(/(\w+)'s\s+birthday/i);
+      const otherPersonMatch = messageText.match(/(\w+(?:\s+\w+)*)'s\s+birthday/i);
       if (otherPersonMatch) {
         return {
           dataType: 'birthday',
@@ -82,6 +82,19 @@ Return only the JSON object, no other text.`;
           keywords: ['birthday', date.toLowerCase()],
           date: date,
           person: otherPersonMatch[1]
+        };
+      }
+      
+      // Check for "my [person] birthday" pattern
+      const myPersonMatch = messageText.match(/my\s+(\w+(?:\s+\w+)*)\s+birthday/i);
+      if (myPersonMatch) {
+        return {
+          dataType: 'birthday',
+          subject: myPersonMatch[1],
+          extractedData: date,
+          keywords: ['birthday', date.toLowerCase()],
+          date: date,
+          person: myPersonMatch[1]
         };
       }
       
@@ -171,12 +184,18 @@ Return only the JSON object, no other text.`;
         }
       }
       
+      // Extract structured information from the data
+      const structuredData = this.extractStructuredInformation(dataToRemember);
+      
       return {
         dataType: 'remember',
         subject: 'self',
         extractedData: dataToRemember,
         keywords: ['remember', 'note', 'keep'],
-        date: null
+        date: structuredData.date,
+        location: structuredData.location,
+        time: structuredData.time,
+        structuredInfo: structuredData
       };
     }
     
@@ -217,6 +236,74 @@ Return only the JSON object, no other text.`;
       keywords: [],
       date: null
     };
+  }
+
+  extractStructuredInformation(text) {
+    const structuredData = {
+      date: null,
+      location: null,
+      time: null,
+      person: null
+    };
+    
+    // Extract date patterns
+    const datePatterns = [
+      /(\d{1,2}(?:st|nd|rd|th)?\s+(?:jan|feb|mar|apr|may|jun|jul|aug|sep|oct|nov|dec|january|february|march|april|may|june|july|august|september|october|november|december)[a-z]*)/i,
+      /(?:on\s+)?(\d{1,2}\/\d{1,2}\/\d{2,4})/i,
+      /(?:on\s+)?(\d{1,2}-\d{1,2}-\d{2,4})/i
+    ];
+    
+    for (const pattern of datePatterns) {
+      const match = text.match(pattern);
+      if (match) {
+        structuredData.date = match[1];
+        break;
+      }
+    }
+    
+    // Extract location patterns
+    const locationPatterns = [
+      /(?:to|in|at)\s+([A-Z][a-zA-Z\s]+?)(?:\s+on|\s+at|\s+in|\s+for|$)/i,
+      /(?:flight|trip|travel)\s+to\s+([A-Z][a-zA-Z\s]+?)(?:\s+on|\s+at|\s+in|\s+for|$)/i
+    ];
+    
+    for (const pattern of locationPatterns) {
+      const match = text.match(pattern);
+      if (match) {
+        structuredData.location = match[1].trim();
+        break;
+      }
+    }
+    
+    // Extract time patterns
+    const timePatterns = [
+      /(\d{1,2}:\d{2}\s*(?:am|pm)?)/i,
+      /(?:at\s+)?(\d{1,2}\s*(?:am|pm))/i
+    ];
+    
+    for (const pattern of timePatterns) {
+      const match = text.match(pattern);
+      if (match) {
+        structuredData.time = match[1];
+        break;
+      }
+    }
+    
+    // Extract person names (for birthdays, etc.)
+    const personPatterns = [
+      /(?:my|for)\s+([a-zA-Z]+(?:\s+[a-zA-Z]+)*)\s+(?:birthday|bday)/i,
+      /([a-zA-Z]+(?:\s+[a-zA-Z]+)*)'s\s+(?:birthday|bday)/i
+    ];
+    
+    for (const pattern of personPatterns) {
+      const match = text.match(pattern);
+      if (match) {
+        structuredData.person = match[1].trim();
+        break;
+      }
+    }
+    
+    return structuredData;
   }
 
   generateStorageKey(phoneNumber, dataType, subject, person = null) {

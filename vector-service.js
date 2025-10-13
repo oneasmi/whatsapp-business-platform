@@ -125,11 +125,28 @@ class VectorService {
   }
 
   // Check if data already exists and needs updating
-  async checkForExistingData(phoneNumber, dataType, newContent) {
+  async checkForExistingData(phoneNumber, dataType, newContent, person = null) {
     try {
       const userData = await this.retrieveUserData(phoneNumber);
-      const existingData = userData
-        .filter(item => item.dataType === dataType)
+      
+      // Filter by data type and person (if specified)
+      let filteredData = userData.filter(item => item.dataType === dataType);
+      
+      if (person) {
+        // Check if this is for a specific person
+        filteredData = filteredData.filter(item => 
+          item.person === person || 
+          item.metadata?.person === person ||
+          item.content.toLowerCase().includes(person.toLowerCase())
+        );
+      } else {
+        // For self data, only check self entries (no person specified)
+        filteredData = filteredData.filter(item => 
+          !item.person && !item.metadata?.person
+        );
+      }
+      
+      const existingData = filteredData
         .sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp))[0]; // Get most recent
       
       if (existingData) {
