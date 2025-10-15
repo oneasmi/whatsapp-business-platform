@@ -448,14 +448,21 @@ class VectorService {
     }
 
     try {
-      // Delete all vectors for this phone number
-      await this.index.deleteMany({
-        filter: {
-          phoneNumber: { $eq: phoneNumber }
-        }
-      });
+      // First, get all vectors for this phone number to get their IDs
+      const userData = await this.retrieveUserData(phoneNumber);
       
-      console.log(`✅ Deleted all data for phone number: ${phoneNumber}`);
+      if (userData.length === 0) {
+        console.log(`📝 No data found for phone number: ${phoneNumber}`);
+        return true;
+      }
+      
+      // Extract vector IDs
+      const vectorIds = userData.map(item => item.id);
+      
+      // Delete vectors by ID
+      await this.index.deleteMany(vectorIds);
+      
+      console.log(`✅ Deleted ${vectorIds.length} data entries for phone number: ${phoneNumber}`);
       return true;
     } catch (error) {
       console.error('❌ Error deleting data from Pinecone database:', error);
