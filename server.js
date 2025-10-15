@@ -192,6 +192,22 @@ async function handleIncomingMessage(message, contact) {
     userStates.set(phoneNumber, 'conversation');
       }
   } else if (userState === 'conversation') {
+      // Check for delete data command first (highest priority)
+      if (messageText.toLowerCase().includes('delete data') || messageText.toLowerCase().includes('delete all data')) {
+        try {
+          const deleteSuccess = await vectorService.deleteAllUserData(phoneNumber);
+          if (deleteSuccess) {
+            await sendMessage(phoneNumber, '🗑️ All your data has been deleted successfully!\n\n✅ Your personal information, preferences, and all stored data have been permanently removed from the database.\n\nYou can start fresh by providing new information whenever you\'re ready.');
+          } else {
+            await sendMessage(phoneNumber, '❌ Failed to delete data. Please try again or contact support if the issue persists.');
+          }
+        } catch (error) {
+          console.error('❌ Error deleting user data:', error);
+          await sendMessage(phoneNumber, '❌ Sorry, there was an error deleting your data. Please try again later or contact support.');
+        }
+        return;
+      }
+      
       // Check if user is responding to an update confirmation
       if (pendingUpdates.has(phoneNumber)) {
         const pendingUpdate = pendingUpdates.get(phoneNumber);
@@ -224,21 +240,6 @@ async function handleIncomingMessage(message, contact) {
         return;
       }
       
-      // Check for delete data command first
-      if (messageText.toLowerCase().includes('delete data') || messageText.toLowerCase().includes('delete all data')) {
-        try {
-          const deleteSuccess = await vectorService.deleteAllUserData(phoneNumber);
-          if (deleteSuccess) {
-            await sendMessage(phoneNumber, '🗑️ All your data has been deleted successfully!\n\n✅ Your personal information, preferences, and all stored data have been permanently removed from the database.\n\nYou can start fresh by providing new information whenever you\'re ready.');
-          } else {
-            await sendMessage(phoneNumber, '❌ Failed to delete data. Please try again or contact support if the issue persists.');
-          }
-        } catch (error) {
-          console.error('❌ Error deleting user data:', error);
-          await sendMessage(phoneNumber, '❌ Sorry, there was an error deleting your data. Please try again later or contact support.');
-        }
-        return;
-      }
       
       // Handle ongoing conversation - use intelligent data extraction
       const history = conversationHistory.get(phoneNumber).slice(-5); // Last 5 messages for context
