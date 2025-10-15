@@ -245,6 +245,8 @@ If it's neither a greeting, question, nor personal information, respond with: "N
       // Questions about other people's data (generic)
       /when\s+is\s+(\w+)'s/i,
       /what'?s?\s+(\w+)'s/i,
+      /what\s+does\s+(\w+)\s+like/i,
+      /what\s+do\s+(\w+)\s+like/i,
       /does\s+(\w+)\s+have/i,
       /has\s+(\w+)\s+told/i,
       /what\s+do\s+you\s+know\s+about\s+(\w+)/i,
