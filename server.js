@@ -26,10 +26,15 @@ const dataExtractionService = new DataExtractionService();
 // Initialize vector database
 vectorService.initializeIndex().then(success => {
   if (success) {
-    console.log('✅ Vector database initialized');
+    console.log('✅ Pinecone database initialized');
   } else {
-    console.log('📝 Using local storage fallback');
+    console.error('❌ Pinecone database initialization failed');
+    process.exit(1);
   }
+}).catch(error => {
+  console.error('❌ Error initializing Pinecone database:', error);
+  console.error('❌ Please configure PINECONE_API_KEY environment variable');
+  process.exit(1);
 });
 
 // WhatsApp API configuration

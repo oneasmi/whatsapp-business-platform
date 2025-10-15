@@ -48,7 +48,7 @@ class VectorService {
     try {
       await this.pinecone.createIndex({
         name: this.indexName,
-        dimension: 1536, // OpenAI embedding dimension
+        dimension: 1536, // Our hash-based embedding dimension
         metric: 'cosine',
         spec: {
           serverless: {
@@ -198,8 +198,7 @@ class VectorService {
   // Update existing data
   async updateUserData(phoneNumber, userName, dataType, newContent, existingId, metadata = {}) {
     if (!this.isAvailable) {
-      console.log('📝 Updating data locally (vector storage not available)');
-      return this.updateLocally(phoneNumber, userName, dataType, newContent, existingId, metadata);
+      throw new Error('❌ Pinecone database not available. Please configure PINECONE_API_KEY environment variable.');
     }
 
     try {
@@ -229,8 +228,8 @@ class VectorService {
 
       return existingId;
     } catch (error) {
-      console.error('❌ Error updating data in vector database:', error);
-      return this.updateLocally(phoneNumber, userName, dataType, newContent, existingId, metadata);
+      console.error('❌ Error updating data in Pinecone database:', error);
+      throw error;
     }
   }
 
@@ -261,8 +260,7 @@ class VectorService {
   // Store user data in vector database
   async storeUserData(phoneNumber, userName, dataType, content, metadata = {}) {
     if (!this.isAvailable) {
-      console.log('📝 Storing data locally (vector storage not available)');
-      return this.storeLocally(phoneNumber, userName, dataType, content, metadata);
+      throw new Error('❌ Pinecone database not available. Please configure PINECONE_API_KEY environment variable.');
     }
 
     try {
@@ -283,7 +281,7 @@ class VectorService {
       };
 
       await this.index.upsert([vectorData]);
-      console.log('✅ Data stored in vector database:', {
+      console.log('✅ Data stored in Pinecone database:', {
         phoneNumber,
         userName,
         dataType,
@@ -292,8 +290,8 @@ class VectorService {
 
       return vectorId;
     } catch (error) {
-      console.error('❌ Error storing data in vector database:', error);
-      return this.storeLocally(phoneNumber, userName, dataType, content, metadata);
+      console.error('❌ Error storing data in Pinecone database:', error);
+      throw error;
     }
   }
 
@@ -328,8 +326,7 @@ class VectorService {
   // Retrieve user data from vector database
   async retrieveUserData(phoneNumber, query = null, limit = 10) {
     if (!this.isAvailable) {
-      console.log('📝 Retrieving data from local storage');
-      return this.retrieveLocally(phoneNumber, query, limit);
+      throw new Error('❌ Pinecone database not available. Please configure PINECONE_API_KEY environment variable.');
     }
 
     try {
@@ -447,8 +444,7 @@ class VectorService {
   // Delete all data for a user
   async deleteAllUserData(phoneNumber) {
     if (!this.isAvailable) {
-      console.log('📝 Deleting data locally (vector storage not available)');
-      return this.deleteLocally(phoneNumber);
+      throw new Error('❌ Pinecone database not available. Please configure PINECONE_API_KEY environment variable.');
     }
 
     try {
@@ -462,8 +458,8 @@ class VectorService {
       console.log(`✅ Deleted all data for phone number: ${phoneNumber}`);
       return true;
     } catch (error) {
-      console.error('❌ Error deleting data from vector database:', error);
-      return this.deleteLocally(phoneNumber);
+      console.error('❌ Error deleting data from Pinecone database:', error);
+      throw error;
     }
   }
 
