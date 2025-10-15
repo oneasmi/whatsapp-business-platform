@@ -24,12 +24,43 @@ class VectorService {
     }
 
     try {
+      // Check if index exists first
+      const indexList = await this.pinecone.listIndexes();
+      const indexExists = indexList.indexes?.some(index => index.name === this.indexName);
+      
+      if (!indexExists) {
+        console.log(`📝 Pinecone index '${this.indexName}' does not exist. Creating it...`);
+        await this.createIndex();
+      }
+      
       this.index = this.pinecone.index(this.indexName);
       console.log('✅ Pinecone index initialized:', this.indexName);
       return true;
     } catch (error) {
       console.error('❌ Error initializing Pinecone index:', error);
+      console.log('📝 Falling back to local storage');
       return false;
+    }
+  }
+
+  // Create Pinecone index if it doesn't exist
+  async createIndex() {
+    try {
+      await this.pinecone.createIndex({
+        name: this.indexName,
+        dimension: 1536, // OpenAI embedding dimension
+        metric: 'cosine',
+        spec: {
+          serverless: {
+            cloud: 'aws',
+            region: 'us-east-1'
+          }
+        }
+      });
+      console.log(`✅ Created Pinecone index: ${this.indexName}`);
+    } catch (error) {
+      console.error('❌ Error creating Pinecone index:', error);
+      throw error;
     }
   }
 
@@ -410,6 +441,46 @@ class VectorService {
     } catch (error) {
       console.error('❌ Error searching similar data:', error);
       return [];
+    }
+  }
+
+  // Delete all data for a user
+  async deleteAllUserData(phoneNumber) {
+    if (!this.isAvailable) {
+      console.log('📝 Deleting data locally (vector storage not available)');
+      return this.deleteLocally(phoneNumber);
+    }
+
+    try {
+      // Delete all vectors for this phone number
+      await this.index.deleteMany({
+        filter: {
+          phoneNumber: { $eq: phoneNumber }
+        }
+      });
+      
+      console.log(`✅ Deleted all data for phone number: ${phoneNumber}`);
+      return true;
+    } catch (error) {
+      console.error('❌ Error deleting data from vector database:', error);
+      return this.deleteLocally(phoneNumber);
+    }
+  }
+
+  // Delete data locally
+  deleteLocally(phoneNumber) {
+    try {
+      if (global.userDataStore && global.userDataStore.has(phoneNumber)) {
+        global.userDataStore.delete(phoneNumber);
+        console.log(`✅ Deleted all local data for phone number: ${phoneNumber}`);
+        return true;
+      } else {
+        console.log(`📝 No local data found for phone number: ${phoneNumber}`);
+        return true;
+      }
+    } catch (error) {
+      console.error('❌ Error deleting local data:', error);
+      return false;
     }
   }
 

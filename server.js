@@ -219,6 +219,17 @@ async function handleIncomingMessage(message, contact) {
         return;
       }
       
+      // Check for delete data command first
+      if (messageText.toLowerCase().includes('delete data') || messageText.toLowerCase().includes('delete all data')) {
+        const deleteSuccess = await vectorService.deleteAllUserData(phoneNumber);
+        if (deleteSuccess) {
+          await sendMessage(phoneNumber, '🗑️ All your data has been deleted successfully!');
+        } else {
+          await sendMessage(phoneNumber, '❌ Failed to delete data. Please try again.');
+        }
+        return;
+      }
+      
       // Handle ongoing conversation - use intelligent data extraction
       const history = conversationHistory.get(phoneNumber).slice(-5); // Last 5 messages for context
       const response = await geminiService.generateConversationResponse(userName, messageText, history);
