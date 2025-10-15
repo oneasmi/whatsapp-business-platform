@@ -154,28 +154,35 @@ async function handleIncomingMessage(message, contact) {
         return;
       }
       
-      // Check if user already has a name stored (trying to update)
-      const existingNameData = await vectorService.checkForExistingData(phoneNumber, 'name', messageText);
+      // Check if this looks like a name (not other data)
+      const isNameLike = messageText.toLowerCase().includes('name') || 
+                        messageText.toLowerCase().includes('i am') || 
+                        messageText.toLowerCase().includes('i\'m') ||
+                        /^[A-Za-z\s]+$/.test(messageText.trim()) && messageText.trim().length < 50;
       
-      if (existingNameData.exists) {
-        // User already has a name, ask for confirmation to update
-        const confirmationMessage = await geminiService.generateUpdateConfirmation(
-          'name', 
-          existingNameData.existingContent, 
-          messageText
-        );
-        await sendMessage(phoneNumber, confirmationMessage);
+      if (isNameLike) {
+        // Check if user already has a name stored (trying to update)
+        const existingNameData = await vectorService.checkForExistingData(phoneNumber, 'name', messageText);
         
-        // Store pending update
-        pendingUpdates.set(phoneNumber, {
-          dataType: 'name',
-          newContent: messageText,
-          existingId: existingNameData.existingId,
-          existingContent: existingNameData.existingContent
-        });
-        
-        // Stay in waiting_for_name_response state until they confirm
-      } else {
+        if (existingNameData.exists) {
+          // User already has a name, ask for confirmation to update
+          const confirmationMessage = await geminiService.generateUpdateConfirmation(
+            'name', 
+            existingNameData.existingContent, 
+            messageText
+          );
+          await sendMessage(phoneNumber, confirmationMessage);
+          
+          // Store pending update
+          pendingUpdates.set(phoneNumber, {
+            dataType: 'name',
+            newContent: messageText,
+            existingId: existingNameData.existingId,
+            existingContent: existingNameData.existingContent
+          });
+          
+          // Stay in waiting_for_name_response state until they confirm
+        } else {
         // First time providing name, extract the name properly
         const extractedData = await dataExtractionService.extractStructuredData(messageText, userName);
         const extractedName = extractedData.extractedData;
@@ -189,7 +196,11 @@ async function handleIncomingMessage(message, contact) {
           context: 'name_collection'
         });
         
-    userStates.set(phoneNumber, 'conversation');
+        userStates.set(phoneNumber, 'conversation');
+        }
+      } else {
+        // Not a name-like message, ask for name again
+        await sendMessage(phoneNumber, 'Please tell me your name so I can assist you better.');
       }
   } else if (userState === 'conversation') {
       // Check for delete data command first (highest priority)
